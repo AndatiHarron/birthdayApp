@@ -44,11 +44,13 @@ export class MpesaAdapter implements PaymentAdapter {
       !env.MPESA_CONSUMER_KEY ||
       !env.MPESA_CONSUMER_SECRET ||
       !env.MPESA_SHORTCODE ||
-      !env.MPESA_PASSKEY
+      !env.MPESA_PASSKEY ||
+      // Without it every callback is refused and payments settle only via reconciliation.
+      !env.MPESA_CALLBACK_SECRET
     ) {
       throw new AppError('PAYMENT_PROVIDER_UNAVAILABLE', {
         message: 'M-Pesa is not configured on this server.',
-        context: { missing: 'MPESA_CONSUMER_KEY/SECRET/SHORTCODE/PASSKEY' },
+        context: { missing: 'MPESA_CONSUMER_KEY/SECRET/SHORTCODE/PASSKEY/CALLBACK_SECRET' },
       });
     }
   }
@@ -132,7 +134,8 @@ export class MpesaAdapter implements PaymentAdapter {
       PartyA: msisdn,
       PartyB: env.MPESA_SHORTCODE,
       PhoneNumber: msisdn,
-      CallBackURL: `${env.API_BASE_URL}/api/v1/payments/webhooks/mpesa`,
+      // Daraja cannot send custom headers, so the shared secret rides in the URL.
+      CallBackURL: `${env.API_BASE_URL}/api/v1/webhooks/payments/mpesa?token=${encodeURIComponent(env.MPESA_CALLBACK_SECRET ?? '')}`,
       AccountReference: request.reference.slice(0, 12),
       TransactionDesc: request.description.slice(0, 13),
     };
@@ -266,6 +269,7 @@ export class MpesaAdapter implements PaymentAdapter {
   async parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     rawBody: Buffer;
+    query?: Record<string, unknown>;
   }): Promise<NormalisedWebhookEvent> {
     if (!env.MPESA_CALLBACK_SECRET) {
       throw new AppError('WEBHOOK_SIGNATURE_INVALID', {
@@ -273,7 +277,8 @@ export class MpesaAdapter implements PaymentAdapter {
         context: { missing: 'MPESA_CALLBACK_SECRET' },
       });
     }
-    const supplied = firstHeader(input.headers['x-callback-token']);
+    const queryToken = input.query?.token;
+    const supplied = firstHeader(input.headers['x-callback-token']) ?? (typeof queryToken === 'string' ? queryToken : null);
     if (!supplied || !safeEqual(supplied, env.MPESA_CALLBACK_SECRET)) {
       throw new AppError('WEBHOOK_SIGNATURE_INVALID');
     }

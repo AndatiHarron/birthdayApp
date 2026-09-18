@@ -270,7 +270,7 @@ webhookRouter.post(
   asyncHandler(async (req, res) => {
     const provider = String(req.params.provider ?? '').toLowerCase();
     const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
-    const result = await paymentService.handleWebhook(provider, req.headers, raw);
+    const result = await paymentService.handleWebhook(provider, req.headers, raw, req.query);
     // M-Pesa expects this exact acknowledgement shape.
     if (provider === 'mpesa') {
       res.json({ ResultCode: 0, ResultDesc: 'Accepted' });

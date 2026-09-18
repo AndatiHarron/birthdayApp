@@ -54,6 +54,11 @@ export const logger = pino({
 
 export type Logger = typeof logger;
 
+/** Masks secrets carried in query strings (the M-Pesa callback token). */
+export function redactUrl(url: string): string {
+  return url.replace(/([?&]token=)[^&]*/gi, '$1[redacted]');
+}
+
 export function childLogger(bindings: Record<string, unknown>) {
   return logger.child(bindings);
 }

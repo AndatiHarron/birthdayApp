@@ -5,7 +5,7 @@ import { MulterError } from 'multer';
 import { ZodError } from 'zod';
 import { env } from '../config/env';
 import { AppError, isAppError } from '../lib/errors';
-import { logger } from '../lib/logger';
+import { logger, redactUrl } from '../lib/logger';
 import { isRetryableTransactionError } from '../lib/prisma';
 import { toFieldErrors } from './validate';
 
@@ -45,7 +45,7 @@ export function errorHandler(
     requestId: req.id,
     userId: req.auth?.userId,
     method: req.method,
-    path: req.originalUrl,
+    path: redactUrl(req.originalUrl),
     code: mapped.code,
     status: mapped.status,
     context: isAppError(error) ? error.context : undefined,

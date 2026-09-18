@@ -8,7 +8,7 @@ import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { buildOpenApiDocument } from './docs/openapi';
-import { logger } from './lib/logger';
+import { logger, redactUrl } from './lib/logger';
 import { prisma } from './lib/prisma';
 import { getRedis } from './lib/redis';
 import { errorHandler, notFoundHandler } from './middleware/error';
@@ -37,6 +37,12 @@ export function createApp(): Express {
       genReqId: (req) => (req as express.Request).id,
       autoLogging: { ignore: (req) => req.url === '/health' || req.url === '/ready' },
       customLogLevel: (_req, res, error) => (error || res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'info' : 'debug'),
+      serializers: {
+        req: (req: { url: string }) => {
+          req.url = redactUrl(req.url);
+          return req;
+        },
+      },
     }),
   );
 

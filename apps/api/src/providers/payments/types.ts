@@ -86,6 +86,8 @@ export interface PaymentAdapter {
   parseWebhook(input: {
     headers: Record<string, string | string[] | undefined>;
     rawBody: Buffer;
+    /** Callback URL query string, for providers that cannot send headers (M-Pesa). */
+    query?: Record<string, unknown>;
   }): Promise<NormalisedWebhookEvent>;
   refund?(request: RefundRequest): Promise<RefundResult>;
 }

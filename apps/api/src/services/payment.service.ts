@@ -617,12 +617,13 @@ export async function handleWebhook(
   slug: string,
   headers: Record<string, string | string[] | undefined>,
   rawBody: Buffer,
+  query: Record<string, unknown> = {},
 ): Promise<{ received: true; duplicate: boolean }> {
   const adapter = adapterForWebhookSlug(slug);
 
   let event: NormalisedWebhookEvent;
   try {
-    event = await adapter.parseWebhook({ headers, rawBody });
+    event = await adapter.parseWebhook({ headers, rawBody, query });
   } catch (error) {
     logger.warn({ err: error, slug }, 'webhook signature rejected');
     throw error instanceof AppError ? error : new AppError('WEBHOOK_SIGNATURE_INVALID');

@@ -1,0 +1,34 @@
+{
+  "name": "birthday-gifting-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Birthday & gifting platform — never forget a birthday, never guess the perfect gift.",
+  "workspaces": [
+    "packages/*",
+    "apps/api",
+    "apps/admin"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "npm run build -w @bday/shared && npm run build -w @bday/api && npm run build -w @bday/admin",
+    "dev:api": "npm run dev -w @bday/api",
+    "dev:admin": "npm run dev -w @bday/admin",
+    "dev:mobile": "cd apps/mobile && npm start",
+    "db:generate": "npm run db:generate -w @bday/api",
+    "db:migrate": "npm run db:migrate -w @bday/api",
+    "db:deploy": "npm run db:deploy -w @bday/api",
+    "db:seed": "npm run db:seed -w @bday/api",
+    "db:reset": "npm run db:reset -w @bday/api",
+    "db:studio": "npm run db:studio -w @bday/api",
+    "test": "npm run test -w @bday/api",
+    "test:api": "npm run test -w @bday/api",
+    "lint": "npm run lint -w @bday/api && npm run lint -w @bday/admin",
+    "typecheck": "npm run typecheck -w @bday/shared && npm run typecheck -w @bday/api && npm run typecheck -w @bday/admin",
+    "setup": "npm install && npm run build -w @bday/shared && npm run db:generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

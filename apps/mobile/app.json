@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "Birthday",
+    "slug": "birthday-gifting",
+    "scheme": "bday",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.birthday.gifting",
+      "infoPlist": {
+        "NSContactsUsageDescription": "Find friends' birthdays in your contacts so you never miss one. Contacts are only imported when you choose them.",
+        "NSPhotoLibraryUsageDescription": "Add photos to your profile, wishlist, cards and birthday memories.",
+        "NSCameraUsageDescription": "Take photos for your wishlist, cards and birthday memories.",
+        "NSMicrophoneUsageDescription": "Record voice birthday wishes and voice notes."
+      },
+      "associatedDomains": []
+    },
+    "android": {
+      "package": "app.birthday.gifting",
+      "adaptiveIcon": {
+        "backgroundColor": "#F3E8FF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "READ_CONTACTS",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#7C3AED"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Find friends' birthdays in your contacts so you never miss one."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Add photos to your wishlist, cards and memories."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Record voice birthday wishes and voice notes."
+        }
+      ],
+      "expo-sharing",
+      "expo-image"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000",
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}

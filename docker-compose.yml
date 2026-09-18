@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bday_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bday
+      POSTGRES_PASSWORD: bday_dev_password
+      POSTGRES_DB: bday
+    ports:
+      - '5432:5432'
+    volumes:
+      - bday_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bday -d bday']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: bday_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - bday_redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional: S3-compatible object storage for local development.
+  # Console: http://localhost:9001  (bday / bday_dev_password)
+  minio:
+    image: minio/minio:latest
+    container_name: bday_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: bday
+      MINIO_ROOT_PASSWORD: bday_dev_password
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - bday_miniodata:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bday_pgdata:
+  bday_redisdata:
+  bday_miniodata:

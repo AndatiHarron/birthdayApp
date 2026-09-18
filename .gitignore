@@ -1,0 +1,43 @@
+node_modules/
+dist/
+build/
+coverage/
+.expo/
+.expo-shared/
+web-build/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# editors
+.idea/
+*.swp
+
+# prisma
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+
+# uploads (local storage driver)
+apps/api/storage/
+!apps/api/storage/.gitkeep
+
+# generated
+apps/api/src/generated/
+*.tsbuildinfo
+
+# embedded test database (vitest)
+.pg-test/

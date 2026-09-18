@@ -1,0 +1,2227 @@
+// Birthday gifting platform — PostgreSQL schema (spec §41).
+//
+// Conventions used throughout:
+//   * Ids are cuid()s. They are unguessable, so they are safe in share links.
+//   * Money is an Int count of minor units plus a `currency` column. Never a
+//     Float — group-gift progress has to add up exactly.
+//   * A birthday is stored as (birthMonth, birthDay, birthYear?) rather than a
+//     timestamp: it is a calendar anniversary, not an instant, so it must not
+//     shift with the reader's time zone.
+//   * `deletedAt` marks a soft delete. Rows that carry money or history are
+//     soft-deleted so ledgers stay intact.
+//   * Every enum here mirrors `packages/shared/src/enums.ts`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ==================================================================== *
+ * Enums
+ * ====================================================================
+ */
+
+enum UserRole {
+  USER
+  VENDOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum AuthProvider {
+  EMAIL
+  PHONE
+  GOOGLE
+  APPLE
+}
+
+enum OtpPurpose {
+  PHONE_VERIFICATION
+  EMAIL_VERIFICATION
+  LOGIN
+  PASSWORD_RESET
+}
+
+enum Visibility {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum RelationshipType {
+  FAMILY
+  CLOSE_FRIEND
+  FRIEND
+  COLLEAGUE
+  PARTNER
+  OTHER
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum BirthdaySource {
+  MANUAL
+  CONTACT_IMPORT
+  LINKED_USER
+}
+
+enum WishlistItemPriority {
+  MUST_HAVE
+  HIGH
+  NICE_TO_HAVE
+}
+
+enum WishlistItemStatus {
+  AVAILABLE
+  RESERVED
+  PURCHASED
+  DELIVERED
+  ARCHIVED
+}
+
+enum ReservationStatus {
+  RESERVED
+  PURCHASED
+  DELIVERED
+  CANCELLED
+}
+
+enum GroupGiftStatus {
+  OPEN
+  FUNDED
+  PURCHASED
+  DELIVERED
+  REVEALED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  MPESA
+  CARD
+  STRIPE
+  PAYPAL
+  WALLET
+  MANUAL
+}
+
+enum PaymentPurpose {
+  GIFT_ORDER
+  GROUP_CONTRIBUTION
+  DIGITAL_GIFT
+  WALLET_TOPUP
+  PREMIUM_SUBSCRIPTION
+}
+
+enum PaymentReferenceType {
+  ORDER
+  GROUP_GIFT
+  DIGITAL_GIFT
+  WALLET
+  SUBSCRIPTION
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT
+  PAID
+  PROCESSING
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PENDING
+  PROCESSING
+  DISPATCHED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum DeliveryTarget {
+  RECIPIENT
+  SENDER
+}
+
+enum DeliveryWindow {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum DigitalGiftType {
+  CARD
+  FLOWERS
+  CAKE
+  VOUCHER
+  AIRTIME
+  DATA_BUNDLE
+  EGIFT_CARD
+  ANIMATION
+  WALLET_CREDIT
+}
+
+enum BirthdayMessageKind {
+  TEXT
+  GIF
+  IMAGE
+  VIDEO
+  VOICE
+  CARD
+}
+
+enum CardTemplateStyle {
+  ROMANTIC
+  FUNNY
+  FRIENDSHIP
+  FAMILY
+  PROFESSIONAL
+  SIMPLE
+  ELEGANT
+}
+
+enum ConversationType {
+  DIRECT
+  SURPRISE_GROUP
+  EVENT
+}
+
+enum MessageKind {
+  TEXT
+  IMAGE
+  VOICE
+  SYSTEM
+  POLL
+}
+
+enum RsvpStatus {
+  PENDING
+  GOING
+  MAYBE
+  DECLINED
+}
+
+enum NotificationType {
+  BIRTHDAY_REMINDER
+  BIRTHDAY_TODAY
+  WISHLIST_UPDATED
+  GIFT_RESERVED
+  GIFT_RESERVATION_CANCELLED
+  GROUP_GIFT_INVITE
+  GROUP_GIFT_CONTRIBUTION
+  GROUP_GIFT_FUNDED
+  GIFT_RECEIVED
+  THANK_YOU_RECEIVED
+  BIRTHDAY_WISH_RECEIVED
+  FRIEND_REQUEST
+  FRIEND_REQUEST_ACCEPTED
+  DELIVERY_UPDATE
+  ORDER_UPDATE
+  PAYMENT_UPDATE
+  EVENT_INVITE
+  EVENT_RSVP
+  CHAT_MESSAGE
+  SYSTEM
+}
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum DispatchStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  OUT_OF_STOCK
+  REJECTED
+  ARCHIVED
+}
+
+enum WalletTransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum WalletTransactionReason {
+  TOPUP
+  GIFT_RECEIVED
+  GIFT_SENT
+  CONTRIBUTION
+  REFUND
+  VOUCHER_REDEMPTION
+  ADJUSTMENT
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  IMPERSONATION
+  INAPPROPRIATE_CONTENT
+  FRAUD
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportTargetType {
+  USER
+  PRODUCT
+  VENDOR
+  MESSAGE
+  WISHLIST_ITEM
+  ORDER
+}
+
+enum PromotionType {
+  PERCENTAGE_DISCOUNT
+  FIXED_DISCOUNT
+  FREE_DELIVERY
+  BUNDLE
+}
+
+enum GiftDirection {
+  RECEIVED
+  SENT
+}
+
+enum GiftSource {
+  RESERVATION
+  DIGITAL_GIFT
+  ORDER
+  GROUP_GIFT
+  MANUAL
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+enum AiRole {
+  USER
+  ASSISTANT
+}
+
+/**
+ * ==================================================================== *
+ * Identity & account
+ * ====================================================================
+ */
+
+model User {
+  id           String     @id @default(cuid())
+  email        String?    @unique
+  phone        String?    @unique
+  username     String     @unique
+  passwordHash String?
+  role         UserRole   @default(USER)
+  status       UserStatus @default(PENDING_VERIFICATION)
+
+  emailVerified   Boolean   @default(false)
+  phoneVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+
+  isPremium    Boolean   @default(false)
+  premiumUntil DateTime?
+
+  onboardingCompletedAt DateTime?
+  lastActiveAt          DateTime?
+  suspendedAt           DateTime?
+  suspensionReason      String?
+
+  /// Soft delete. Retained so gift ledgers and orders stay referentially whole.
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile                 Profile?
+  privacy                 PrivacySetting?
+  notificationPreference  NotificationPreference?
+  wallet                  Wallet?
+  identities              AuthIdentity[]
+  refreshTokens           RefreshToken[]
+  devices                 Device[]
+  otpChallenges           OtpChallenge[]
+  interests               UserInterest[]
+  wishlists               Wishlist[]
+  trackedBirthdays        TrackedBirthday[]         @relation("TrackedBirthdayOwner")
+  linkedTrackedBirthdays  TrackedBirthday[]         @relation("TrackedBirthdayLinkedUser")
+  friendGroups            FriendGroup[]
+  sentFriendRequests      Friendship[]              @relation("FriendshipRequester")
+  receivedFriendRequests  Friendship[]              @relation("FriendshipAddressee")
+  blocksMade              BlockedUser[]             @relation("Blocker")
+  blocksReceived          BlockedUser[]             @relation("Blocked")
+  invitesSent             Invite[]                  @relation("InviteInviter")
+  invitesAccepted         Invite[]                  @relation("InviteAcceptor")
+  reservations            GiftReservation[]
+  organizedGroupGifts     GroupGift[]               @relation("GroupGiftOrganizer")
+  beneficiaryGroupGifts   GroupGift[]               @relation("GroupGiftBeneficiary")
+  groupGiftMemberships    GroupGiftMember[]
+  contributions           GiftContribution[]
+  organizedSurprises      Surprise[]                @relation("SurpriseOrganizer")
+  beneficiarySurprises    Surprise[]                @relation("SurpriseBeneficiary")
+  surpriseMemberships     SurpriseMember[]
+  digitalGiftsSent        DigitalGift[]             @relation("DigitalGiftSender")
+  digitalGiftsReceived    DigitalGift[]             @relation("DigitalGiftRecipient")
+  cardsCreated            BirthdayCard[]
+  wishesSent              BirthdayMessage[]         @relation("BirthdayMessageSender")
+  wishesReceived          BirthdayMessage[]         @relation("BirthdayMessageRecipient")
+  messageReactions        BirthdayMessageReaction[]
+  thankYousSent           ThankYou[]                @relation("ThankYouSender")
+  thankYousReceived       ThankYou[]                @relation("ThankYouRecipient")
+  memories                Memory[]
+  giftHistory             GiftHistoryEntry[]        @relation("GiftHistoryOwner")
+  giftHistoryCounterparty GiftHistoryEntry[]        @relation("GiftHistoryCounterparty")
+  vendor                  Vendor?
+  productReviews          ProductReview[]
+  orders                  Order[]                   @relation("OrderBuyer")
+  ordersReceived          Order[]                   @relation("OrderRecipient")
+  deliveryAddresses       DeliveryAddress[]
+  payments                Payment[]
+  promotionRedemptions    PromotionRedemption[]
+  hostedEvents            BirthdayEvent[]
+  eventGuestEntries       EventGuest[]
+  conversationsCreated    Conversation[]            @relation("ConversationCreator")
+  conversationMemberships ConversationMember[]
+  chatMessages            Message[]
+  pollVotes               PollVote[]
+  notifications           Notification[]
+  dispatches              NotificationDispatch[]
+  reportsFiled            Report[]                  @relation("ReportReporter")
+  reportsResolved         Report[]                  @relation("ReportResolver")
+  auditLogs               AuditLog[]
+  aiConversations         AiConversation[]
+  aiUsage                 AiUsageDaily[]
+  deliveryEvents          DeliveryEvent[]
+  refundsIssued           Refund[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([lastActiveAt])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  displayName String
+  avatarUrl   String?
+  bio         String?
+
+  /// The user's own birthday. Month/day are required once onboarding is done.
+  birthMonth Int?
+  birthDay   Int?
+  birthYear  Int?
+
+  timezone    String  @default("Africa/Nairobi")
+  countryCode String  @default("KE")
+  city        String?
+  locale      String  @default("en")
+
+  /// Sizes, favourite colours/brands, dislikes, allergies (spec §5).
+  giftPreferences Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([birthMonth, birthDay])
+  @@index([displayName])
+  @@map("profiles")
+}
+
+model PrivacySetting {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  profileVisibility     Visibility @default(FRIENDS)
+  birthdayVisibility    Visibility @default(FRIENDS)
+  wishlistVisibility    Visibility @default(FRIENDS)
+  giftHistoryVisibility Visibility @default(PRIVATE)
+
+  showAge       Boolean @default(true)
+  showBirthYear Boolean @default(true)
+
+  discoverableByPhone    Boolean @default(true)
+  discoverableByEmail    Boolean @default(true)
+  discoverableByUsername Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("privacy_settings")
+}
+
+model NotificationPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  /// Days before a birthday to send a reminder (spec §21).
+  reminderOffsetsDays Int[]   @default([30, 14, 7, 3, 1, 0])
+  pushEnabled         Boolean @default(true)
+  emailEnabled        Boolean @default(true)
+  smsEnabled          Boolean @default(false)
+
+  mutedTypes NotificationType[] @default([])
+
+  quietHoursStart Int?
+  quietHoursEnd   Int?
+  timezone        String @default("Africa/Nairobi")
+
+  /// Local hour at which "birthday morning" pushes go out.
+  digestHour Int @default(8)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model AuthIdentity {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String
+  email          String?
+  createdAt      DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("auth_identities")
+}
+
+model RefreshToken {
+  id     String @id @default(cuid())
+  userId String
+
+  /// SHA-256 of the token. The raw value only ever exists in the client.
+  tokenHash    String    @unique
+  familyId     String
+  deviceId     String?
+  userAgent    String?
+  ip           String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  /// Set when this token was rotated, to detect refresh-token replay.
+  replacedById String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Device {
+  id         String  @id @default(cuid())
+  userId     String
+  deviceId   String?
+  platform   String
+  model      String?
+  osVersion  String?
+  appVersion String?
+
+  /// Expo push token. Unique so a reinstall moves the token to the new user.
+  pushToken  String?  @unique
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@map("devices")
+}
+
+model OtpChallenge {
+  id      String     @id @default(cuid())
+  userId  String?
+  purpose OtpPurpose
+
+  /// Phone in E.164 or a lowercased email.
+  destination String
+  channel     NotificationChannel
+
+  /// bcrypt hash of the 6-digit code; never the code itself.
+  codeHash    String
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  /// Pending registration payload for signups that verify before creating a user.
+  payload     Json?
+  ip          String?
+  createdAt   DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([destination, purpose])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+/**
+ * ==================================================================== *
+ * Interests
+ * ====================================================================
+ */
+
+model Interest {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  label    String
+  emoji    String?
+  position Int     @default(0)
+  isActive Boolean @default(true)
+
+  users            UserInterest[]
+  trackedBirthdays TrackedBirthdayInterest[]
+
+  @@map("interests")
+}
+
+model UserInterest {
+  userId     String
+  interestId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([userId, interestId])
+  @@index([interestId])
+  @@map("user_interests")
+}
+
+/**
+ * ==================================================================== *
+ * Social graph & the birthday calendar
+ * ====================================================================
+ */
+
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  message     String?
+  respondedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  /// One row per ordered pair. The service normalises direction before writing
+  /// so (a,b) and (b,a) cannot both exist as pending requests.
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
+  @@map("friendships")
+}
+
+/// A person on someone's birthday calendar.
+///
+/// This is the one model the calendar reads from, whether the person is a
+/// platform user (`linkedUserId` set, kept in sync with their profile) or a
+/// manual contact. Reminder overrides, notes, favourites and grouping all hang
+/// off this row rather than off the friendship, because a user may track
+/// birthdays for people who are not on the platform at all.
+model TrackedBirthday {
+  id      String @id @default(cuid())
+  ownerId String
+
+  name      String
+  avatarUrl String?
+
+  birthMonth Int
+  birthDay   Int
+  birthYear  Int?
+
+  relationship RelationshipType @default(FRIEND)
+  source       BirthdaySource   @default(MANUAL)
+  isFavorite   Boolean          @default(false)
+  notes        String?
+  phone        String?
+  email        String?
+
+  /// Per-person override of the owner's default reminder ladder.
+  reminderOffsetsDays Int[] @default([])
+
+  linkedUserId      String?
+  /// Device address-book id, so re-importing updates rather than duplicates.
+  externalContactId String?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  owner      User  @relation("TrackedBirthdayOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  linkedUser User? @relation("TrackedBirthdayLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+
+  interests    TrackedBirthdayInterest[]
+  groupMembers FriendGroupMember[]
+  invites      Invite[]
+  groupGifts   GroupGift[]
+  surprises    Surprise[]
+  orders       Order[]
+  wishes       BirthdayMessage[]
+  dispatches   NotificationDispatch[]
+
+  @@unique([ownerId, linkedUserId])
+  @@unique([ownerId, externalContactId])
+  @@index([ownerId, birthMonth, birthDay])
+  @@index([linkedUserId])
+  @@map("tracked_birthdays")
+}
+
+model TrackedBirthdayInterest {
+  trackedBirthdayId String
+  interestId        String
+
+  trackedBirthday TrackedBirthday @relation(fields: [trackedBirthdayId], references: [id], onDelete: Cascade)
+  interest        Interest        @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([trackedBirthdayId, interestId])
+  @@map("tracked_birthday_interests")
+}
+
+model FriendGroup {
+  id       String  @id @default(cuid())
+  ownerId  String
+  name     String
+  color    String?
+  /// System groups (Family, Friends, Work…) are seeded and cannot be deleted.
+  isSystem Boolean @default(false)
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members FriendGroupMember[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+  @@map("friend_groups")
+}
+
+model FriendGroupMember {
+  groupId           String
+  trackedBirthdayId String
+  createdAt         DateTime @default(now())
+
+  group           FriendGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  trackedBirthday TrackedBirthday @relation(fields: [trackedBirthdayId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, trackedBirthdayId])
+  @@index([trackedBirthdayId])
+  @@map("friend_group_members")
+}
+
+model BlockedUser {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocked_users")
+}
+
+model Invite {
+  id        String @id @default(cuid())
+  code      String @unique
+  inviterId String
+
+  /// When set, accepting the invite links this calendar entry to the new user.
+  trackedBirthdayId String?
+
+  expiresAt        DateTime?
+  acceptedAt       DateTime?
+  acceptedByUserId String?
+  createdAt        DateTime  @default(now())
+
+  inviter         User             @relation("InviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  acceptedBy      User?            @relation("InviteAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: SetNull)
+
+  @@index([inviterId])
+  @@map("invites")
+}
+
+/**
+ * ==================================================================== *
+ * Wishlists & reservations
+ * ====================================================================
+ */
+
+model Wishlist {
+  id          String     @id @default(cuid())
+  ownerId     String
+  title       String
+  description String?
+  visibility  Visibility @default(FRIENDS)
+  isDefault   Boolean    @default(false)
+
+  /// Public share slug (spec §12). Rotatable, which invalidates old links.
+  shareSlug String @unique
+  viewCount Int    @default(0)
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  owner  User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items  WishlistItem[]
+  events BirthdayEvent[]
+
+  @@index([ownerId])
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String @id @default(cuid())
+  wishlistId String
+
+  name        String
+  description String?
+  imageUrl    String?
+  priceMinor  Int?
+  currency    String  @default("KES")
+  productUrl  String?
+  merchant    String?
+  category    String?
+
+  priority WishlistItemPriority @default(NICE_TO_HAVE)
+  size     String?
+  color    String?
+  notes    String?
+
+  /// How many they want, and how many gifters have claimed so far. Both are
+  /// updated inside the reservation transaction so they can never disagree.
+  quantity         Int @default(1)
+  reservedQuantity Int @default(0)
+
+  status   WishlistItemStatus @default(AVAILABLE)
+  position Int                @default(0)
+
+  preferredVendorId String?
+  productId         String?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  wishlist        Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  preferredVendor Vendor?  @relation(fields: [preferredVendorId], references: [id], onDelete: SetNull)
+
+  reservations GiftReservation[]
+  groupGifts   GroupGift[]
+  orderItems   OrderItem[]
+
+  @@index([wishlistId, position])
+  @@index([status])
+  @@index([productId])
+  @@map("wishlist_items")
+}
+
+/// A gifter's claim on a wishlist item (spec §13).
+///
+/// The wishlist owner must never be able to read these rows before the gift is
+/// handed over — enforced in the service layer, not just the UI.
+model GiftReservation {
+  id             String @id @default(cuid())
+  wishlistItemId String
+  reserverId     String
+
+  quantity    Int               @default(1)
+  status      ReservationStatus @default(RESERVED)
+  note        String?
+  isAnonymous Boolean           @default(false)
+
+  purchasedAt DateTime?
+  deliveredAt DateTime?
+  cancelledAt DateTime?
+
+  /// Links the claim to an in-app purchase, when one was made.
+  orderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wishlistItem WishlistItem @relation(fields: [wishlistItemId], references: [id], onDelete: Cascade)
+  reserver     User         @relation(fields: [reserverId], references: [id], onDelete: Cascade)
+  order        Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  thankYous    ThankYou[]
+
+  @@index([wishlistItemId, status])
+  @@index([reserverId])
+  @@map("gift_reservations")
+}
+
+/**
+ * ==================================================================== *
+ * Group gifting & surprises
+ * ====================================================================
+ */
+
+model Surprise {
+  id          String @id @default(cuid())
+  title       String
+  organizerId String
+
+  beneficiaryUserId String?
+  trackedBirthdayId String?
+  beneficiaryName   String
+
+  budgetMinor Int?
+  currency    String @default("KES")
+
+  conversationId String?   @unique
+  revealedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizer       User             @relation("SurpriseOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  beneficiary     User?            @relation("SurpriseBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: SetNull)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: SetNull)
+  conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  members    SurpriseMember[]
+  groupGifts GroupGift[]
+
+  @@index([organizerId])
+  @@index([beneficiaryUserId])
+  @@map("surprises")
+}
+
+model SurpriseMember {
+  surpriseId String
+  userId     String
+  isAdmin    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  surprise Surprise @relation(fields: [surpriseId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([surpriseId, userId])
+  @@index([userId])
+  @@map("surprise_members")
+}
+
+model GroupGift {
+  id          String @id @default(cuid())
+  organizerId String
+
+  beneficiaryUserId String?
+  trackedBirthdayId String?
+  beneficiaryName   String
+
+  title       String
+  description String?
+  imageUrl    String?
+
+  targetMinor Int
+  /// Denormalised sum of SUCCESSFUL contributions, maintained transactionally.
+  raisedMinor Int    @default(0)
+  currency    String @default("KES")
+
+  status               GroupGiftStatus @default(OPEN)
+  deadline             DateTime?
+  minContributionMinor Int             @default(5000)
+
+  wishlistItemId String?
+  productId      String?
+  surpriseId     String?
+  conversationId String? @unique
+  orderId        String?
+
+  revealedAt         DateTime?
+  revealMessage      String?
+  revealContributors Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizer       User             @relation("GroupGiftOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  beneficiary     User?            @relation("GroupGiftBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: SetNull)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: SetNull)
+  wishlistItem    WishlistItem?    @relation(fields: [wishlistItemId], references: [id], onDelete: SetNull)
+  product         Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  surprise        Surprise?        @relation(fields: [surpriseId], references: [id], onDelete: SetNull)
+  conversation    Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  order           Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  members       GroupGiftMember[]
+  contributions GiftContribution[]
+  thankYous     ThankYou[]
+
+  @@index([organizerId])
+  @@index([beneficiaryUserId])
+  @@index([status])
+  @@map("group_gifts")
+}
+
+model GroupGiftMember {
+  groupGiftId String
+  userId      String
+  isAdmin     Boolean   @default(false)
+  invitedAt   DateTime  @default(now())
+  joinedAt    DateTime?
+
+  groupGift GroupGift @relation(fields: [groupGiftId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupGiftId, userId])
+  @@index([userId])
+  @@map("group_gift_members")
+}
+
+/// Spec §58 rule 4 — every contribution is a transaction record, tied to a
+/// Payment row. `raisedMinor` only moves when the payment settles.
+model GiftContribution {
+  id            String @id @default(cuid())
+  groupGiftId   String
+  contributorId String
+
+  amountMinor Int
+  currency    String
+  isAnonymous Boolean @default(false)
+  message     String?
+
+  status    PaymentStatus @default(PENDING)
+  paymentId String?       @unique
+
+  idempotencyKey String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groupGift   GroupGift @relation(fields: [groupGiftId], references: [id], onDelete: Cascade)
+  contributor User      @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  payment     Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([groupGiftId, status])
+  @@index([contributorId])
+  @@map("gift_contributions")
+}
+
+/**
+ * ==================================================================== *
+ * Digital gifts, cards, wishes
+ * ====================================================================
+ */
+
+model DigitalGift {
+  id              String          @id @default(cuid())
+  type            DigitalGiftType
+  senderId        String
+  recipientUserId String?
+  /// For sending to someone who has not joined yet.
+  recipientPhone  String?
+
+  title     String
+  message   String?
+  animation String?
+  cardId    String? @unique
+
+  valueMinor Int?
+  currency   String?
+
+  isAnonymous Boolean @default(false)
+
+  deliverAt   DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+
+  /// For voucher/airtime/e-gift-card types.
+  redemptionCode String?   @unique
+  redeemedAt     DateTime?
+
+  paymentId      String?        @unique
+  paymentStatus  PaymentStatus?
+  idempotencyKey String         @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender    User          @relation("DigitalGiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User?         @relation("DigitalGiftRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  card      BirthdayCard? @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  payment   Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  thankYous ThankYou[]
+
+  @@index([recipientUserId, deliveredAt])
+  @@index([senderId])
+  @@index([deliverAt])
+  @@map("digital_gifts")
+}
+
+model CardTemplate {
+  id              String            @id @default(cuid())
+  name            String
+  style           CardTemplateStyle
+  previewUrl      String
+  backgroundUrl   String?
+  backgroundColor String?
+  defaultHeadline String?
+  defaultBody     String?
+  isPremium       Boolean           @default(false)
+  isActive        Boolean           @default(true)
+  position        Int               @default(0)
+
+  createdAt DateTime @default(now())
+
+  cards BirthdayCard[]
+
+  @@index([style])
+  @@map("card_templates")
+}
+
+model BirthdayCard {
+  id         String  @id @default(cuid())
+  creatorId  String
+  templateId String?
+
+  style           CardTemplateStyle @default(SIMPLE)
+  backgroundUrl   String?
+  backgroundColor String?
+  headline        String?
+  body            String?
+  fontFamily      String?
+
+  /// Placement arrays: [{ id, url, x, y, scale, rotation }]
+  stickers Json @default("[]")
+  photos   Json @default("[]")
+
+  musicUrl  String?
+  animation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator  User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  template CardTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  message     BirthdayMessage?
+  digitalGift DigitalGift?
+
+  @@index([creatorId])
+  @@map("birthday_cards")
+}
+
+model BirthdayMessage {
+  id                String  @id @default(cuid())
+  senderId          String?
+  recipientUserId   String
+  trackedBirthdayId String?
+
+  kind            BirthdayMessageKind @default(TEXT)
+  body            String?
+  mediaUrl        String?
+  durationSeconds Int?
+  cardId          String?             @unique
+
+  /// Which birthday this wish belongs to, so history groups cleanly by year.
+  celebrationYear Int
+
+  isAnonymous Boolean   @default(false)
+  deliverAt   DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  sender          User?            @relation("BirthdayMessageSender", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient       User             @relation("BirthdayMessageRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: SetNull)
+  card            BirthdayCard?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+
+  reactions BirthdayMessageReaction[]
+
+  @@index([recipientUserId, celebrationYear])
+  @@index([senderId])
+  @@index([deliverAt])
+  @@map("birthday_messages")
+}
+
+model BirthdayMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message BirthdayMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("birthday_message_reactions")
+}
+
+model ThankYou {
+  id              String @id @default(cuid())
+  senderId        String
+  recipientUserId String
+
+  kind     BirthdayMessageKind @default(TEXT)
+  body     String?
+  mediaUrl String?
+
+  /// Exactly one of the following is set, identifying the gift being thanked.
+  reservationId String?
+  digitalGiftId String?
+  orderId       String?
+  groupGiftId   String?
+
+  createdAt DateTime @default(now())
+
+  sender      User             @relation("ThankYouSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User             @relation("ThankYouRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  reservation GiftReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  digitalGift DigitalGift?     @relation(fields: [digitalGiftId], references: [id], onDelete: SetNull)
+  order       Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  groupGift   GroupGift?       @relation(fields: [groupGiftId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId])
+  @@index([senderId])
+  @@map("thank_yous")
+}
+
+/**
+ * ==================================================================== *
+ * Memories & gift history
+ * ====================================================================
+ */
+
+model Memory {
+  id     String @id @default(cuid())
+  userId String
+
+  celebrationYear Int
+  title           String?
+  note            String?
+  visibility      Visibility @default(FRIENDS)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media MemoryMedia[]
+
+  @@unique([userId, celebrationYear])
+  @@index([userId])
+  @@map("memories")
+}
+
+model MemoryMedia {
+  id       String    @id @default(cuid())
+  memoryId String
+  url      String
+  kind     MediaKind @default(IMAGE)
+  caption  String?
+  position Int       @default(0)
+
+  createdAt DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId, position])
+  @@map("memory_media")
+}
+
+/// Private per-user ledger of gifts given and received (spec §26). Rows are
+/// written automatically when a gift completes, and can also be added by hand.
+model GiftHistoryEntry {
+  id        String        @id @default(cuid())
+  userId    String
+  direction GiftDirection
+
+  title    String
+  imageUrl String?
+
+  counterpartyUserId String?
+  counterpartyName   String?
+
+  occasion        String @default("Birthday")
+  celebrationYear Int?
+
+  priceMinor  Int?
+  currency    String?
+  /// Owners can hide what a gift cost when sharing their history.
+  priceHidden Boolean @default(false)
+
+  message String?
+
+  source   GiftSource @default(MANUAL)
+  sourceId String?
+
+  thankedAt  DateTime?
+  occurredAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user         User  @relation("GiftHistoryOwner", fields: [userId], references: [id], onDelete: Cascade)
+  counterparty User? @relation("GiftHistoryCounterparty", fields: [counterpartyUserId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, source, sourceId, direction])
+  @@index([userId, occurredAt])
+  @@map("gift_history_entries")
+}
+
+/**
+ * ==================================================================== *
+ * Marketplace
+ * ====================================================================
+ */
+
+model Vendor {
+  id          String       @id @default(cuid())
+  ownerUserId String       @unique
+  name        String
+  slug        String       @unique
+  description String?
+  logoUrl     String?
+  status      VendorStatus @default(PENDING)
+
+  contactEmail       String
+  contactPhone       String
+  city               String
+  area               String?
+  registrationNumber String?
+
+  /// Platform commission in basis points (spec §54).
+  commissionBps Int @default(1000)
+
+  rating      Float?
+  ratingCount Int    @default(0)
+
+  approvedAt   DateTime?
+  suspendedAt  DateTime?
+  statusReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner         User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  products      Product[]
+  orderItems    OrderItem[]
+  promotions    Promotion[]
+  wishlistItems WishlistItem[]
+
+  @@index([status])
+  @@index([city])
+  @@map("vendors")
+}
+
+model GiftCategory {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  label    String
+  emoji    String?
+  parentId String?
+  position Int     @default(0)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  parent   GiftCategory?         @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children GiftCategory[]        @relation("CategoryTree")
+  products ProductCategoryLink[]
+
+  @@map("gift_categories")
+}
+
+model Product {
+  id       String @id @default(cuid())
+  vendorId String
+
+  name        String
+  slug        String   @unique
+  description String
+  images      String[]
+
+  priceMinor          Int
+  compareAtPriceMinor Int?
+  currency            String @default("KES")
+
+  status ProductStatus @default(PENDING_REVIEW)
+  tags   String[]      @default([])
+
+  /// Null means "made to order" — always available.
+  stock Int?
+
+  deliveryEstimate String?
+  deliveryFeeMinor Int?
+  isPersonalizable Boolean @default(false)
+
+  city      String?
+  area      String?
+  latitude  Float?
+  longitude Float?
+
+  rating        Float?
+  reviewCount   Int     @default(0)
+  isFeatured    Boolean @default(false)
+  viewCount     Int     @default(0)
+  purchaseCount Int     @default(0)
+
+  statusReason String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  vendor        Vendor                @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  categories    ProductCategoryLink[]
+  reviews       ProductReview[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+  groupGifts    GroupGift[]
+
+  @@index([status, isFeatured])
+  @@index([vendorId])
+  @@index([priceMinor])
+  @@index([city, area])
+  @@map("products")
+}
+
+model ProductCategoryLink {
+  productId  String
+  categoryId String
+
+  product  Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category GiftCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+  @@map("product_categories")
+}
+
+model ProductReview {
+  id        String  @id @default(cuid())
+  productId String
+  authorId  String
+  orderId   String?
+
+  rating Int
+  title  String?
+  body   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  /// One review per buyer per product.
+  @@unique([productId, authorId])
+  @@index([productId, rating])
+  @@map("reviews")
+}
+
+/**
+ * ==================================================================== *
+ * Orders, delivery, payments
+ * ====================================================================
+ */
+
+model Order {
+  id        String @id @default(cuid())
+  reference String @unique
+  buyerId   String
+
+  recipientUserId   String?
+  trackedBirthdayId String?
+  recipientName     String?
+  recipientPhone    String?
+
+  status OrderStatus @default(AWAITING_PAYMENT)
+
+  subtotalMinor    Int
+  deliveryFeeMinor Int    @default(0)
+  discountMinor    Int    @default(0)
+  totalMinor       Int
+  currency         String @default("KES")
+
+  deliveryTarget DeliveryTarget @default(RECIPIENT)
+  giftMessage    String?
+  isAnonymous    Boolean        @default(false)
+
+  scheduledDate   DateTime?
+  scheduledWindow DeliveryWindow?
+
+  couponId   String?
+  couponCode String?
+
+  idempotencyKey String @unique
+
+  cancelledAt  DateTime?
+  cancelReason String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  buyer           User             @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  recipient       User?            @relation("OrderRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: SetNull)
+  coupon          Promotion?       @relation(fields: [couponId], references: [id], onDelete: SetNull)
+
+  items        OrderItem[]
+  delivery     Delivery?
+  payments     Payment[]
+  reservations GiftReservation[]
+  groupGifts   GroupGift[]
+  reviews      ProductReview[]
+  thankYous    ThankYou[]
+  redemptions  PromotionRedemption[]
+  refunds      Refund[]
+
+  @@index([buyerId, createdAt])
+  @@index([recipientUserId])
+  @@index([status])
+  @@map("gift_orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  vendorId  String
+
+  /// Name and price are copied at purchase time so history is stable even if
+  /// the vendor later edits or delists the product.
+  name           String
+  imageUrl       String?
+  unitPriceMinor Int
+  quantity       Int     @default(1)
+  totalMinor     Int
+
+  personalization String?
+  wishlistItemId  String?
+
+  createdAt DateTime @default(now())
+
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  wishlistItem WishlistItem? @relation(fields: [wishlistItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([vendorId])
+  @@map("order_items")
+}
+
+model DeliveryAddress {
+  id     String @id @default(cuid())
+  userId String
+
+  label         String  @default("Home")
+  recipientName String
+  phone         String?
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  area          String?
+  countryCode   String  @default("KE")
+  latitude      Float?
+  longitude     Float?
+  instructions  String?
+  isDefault     Boolean @default(false)
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("delivery_addresses")
+}
+
+model Delivery {
+  id      String @id @default(cuid())
+  orderId String @unique
+
+  status DeliveryStatus @default(PENDING)
+  target DeliveryTarget @default(RECIPIENT)
+
+  recipientName  String
+  recipientPhone String?
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  area           String?
+  instructions   String?
+  latitude       Float?
+  longitude      Float?
+
+  scheduledDate   DateTime?
+  scheduledWindow DeliveryWindow?
+
+  trackingCode String?
+  courier      String?
+  deliveredAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order  Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events DeliveryEvent[]
+
+  @@index([status])
+  @@map("deliveries")
+}
+
+model DeliveryEvent {
+  id         String         @id @default(cuid())
+  deliveryId String
+  status     DeliveryStatus
+  note       String?
+  actorId    String?
+  occurredAt DateTime       @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  actor    User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([deliveryId, occurredAt])
+  @@map("delivery_events")
+}
+
+/// Spec §58 rule 5 — status only ever moves to SUCCESSFUL from a verified
+/// provider callback or a provider-side status query, never from the client.
+model Payment {
+  id        String @id @default(cuid())
+  reference String @unique
+  userId    String
+
+  provider PaymentProvider
+  status   PaymentStatus   @default(PENDING)
+
+  amountMinor Int
+  currency    String
+  purpose     PaymentPurpose
+
+  referenceType PaymentReferenceType
+  referenceId   String?
+
+  /// Provider's own identifier (M-Pesa CheckoutRequestID, Stripe intent id…).
+  providerRef     String?
+  providerPayload Json?
+  failureReason   String?
+
+  idempotencyKey String @unique
+
+  /// Set when the payment settles a marketplace order, so the order's payment
+  /// attempts can be listed without going through `referenceId`.
+  orderId String?
+
+  settledAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  contribution GiftContribution?
+  digitalGift  DigitalGift?
+  walletTxn    WalletTransaction?
+  refunds      Refund[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([providerRef])
+  @@index([referenceType, referenceId])
+  @@map("payments")
+}
+
+/// Raw provider callbacks, stored before processing so a replayed webhook is a
+/// no-op and a failed handler can be retried against the original payload.
+model PaymentWebhookEvent {
+  id             String          @id @default(cuid())
+  provider       PaymentProvider
+  externalId     String
+  payload        Json
+  signatureValid Boolean         @default(false)
+  processedAt    DateTime?
+  error          String?
+  receivedAt     DateTime        @default(now())
+
+  @@unique([provider, externalId])
+  @@index([processedAt])
+  @@map("payment_webhook_events")
+}
+
+model Refund {
+  id        String  @id @default(cuid())
+  paymentId String
+  orderId   String?
+
+  amountMinor Int
+  currency    String
+  reason      String
+  status      PaymentStatus @default(PENDING)
+  providerRef String?
+  issuedById  String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  payment  Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  order    Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  issuedBy User?   @relation(fields: [issuedById], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@map("refunds")
+}
+
+model Wallet {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  balanceMinor Int    @default(0)
+  currency     String @default("KES")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+/// Append-only ledger. Balance is recomputed from, and reconciled against,
+/// these rows; `balanceAfterMinor` makes drift detectable.
+model WalletTransaction {
+  id       String @id @default(cuid())
+  walletId String
+
+  type   WalletTransactionType
+  reason WalletTransactionReason
+
+  amountMinor       Int
+  balanceAfterMinor Int
+  currency          String
+
+  description String?
+
+  referenceType String?
+  referenceId   String?
+  paymentId     String? @unique
+
+  idempotencyKey String? @unique
+
+  createdAt DateTime @default(now())
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([walletId, createdAt])
+  @@map("wallet_transactions")
+}
+
+/**
+ * ==================================================================== *
+ * Promotions
+ * ====================================================================
+ */
+
+model Promotion {
+  id   String        @id @default(cuid())
+  code String        @unique
+  type PromotionType
+
+  valueBps   Int?
+  valueMinor Int?
+  currency   String?
+
+  minSubtotalMinor Int  @default(0)
+  maxDiscountMinor Int?
+
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  usageLimit   Int?
+  usageCount   Int  @default(0)
+  perUserLimit Int  @default(1)
+
+  vendorId    String?
+  description String?
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor      Vendor?               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  orders      Order[]
+  redemptions PromotionRedemption[]
+
+  @@index([isActive, endsAt])
+  @@map("promotions")
+}
+
+model PromotionRedemption {
+  id          String @id @default(cuid())
+  promotionId String
+  userId      String
+  orderId     String
+
+  discountMinor Int
+  currency      String
+
+  createdAt DateTime @default(now())
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, orderId])
+  @@index([promotionId, userId])
+  @@map("promotion_redemptions")
+}
+
+/**
+ * ==================================================================== *
+ * Events
+ * ====================================================================
+ */
+
+model BirthdayEvent {
+  id     String @id @default(cuid())
+  hostId String
+
+  name        String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+
+  venueName    String?
+  venueAddress String?
+  latitude     Float?
+  longitude    Float?
+
+  coverImageUrl  String?
+  wishlistId     String?
+  conversationId String? @unique
+
+  allowPlusOnes Boolean @default(false)
+
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  host         User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  wishlist     Wishlist?     @relation(fields: [wishlistId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  guests EventGuest[]
+
+  @@index([hostId])
+  @@index([startsAt])
+  @@map("birthday_events")
+}
+
+model EventGuest {
+  id      String  @id @default(cuid())
+  eventId String
+  userId  String?
+
+  name        String
+  rsvp        RsvpStatus @default(PENDING)
+  plusOnes    Int        @default(0)
+  note        String?
+  respondedAt DateTime?
+
+  /// Lets a guest without an account respond via a link.
+  inviteToken String @unique
+
+  createdAt DateTime @default(now())
+
+  event BirthdayEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, userId])
+  @@index([eventId, rsvp])
+  @@map("event_guests")
+}
+
+/**
+ * ==================================================================== *
+ * Chat
+ * ====================================================================
+ */
+
+model Conversation {
+  id          String           @id @default(cuid())
+  type        ConversationType @default(DIRECT)
+  title       String?
+  imageUrl    String?
+  createdById String
+
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdBy User @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  members  ConversationMember[]
+  messages Message[]
+  polls    Poll[]
+
+  surprise  Surprise?
+  groupGift GroupGift?
+  event     BirthdayEvent?
+
+  @@index([type])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  conversationId String
+  userId         String
+
+  isAdmin    Boolean   @default(false)
+  lastReadAt DateTime?
+  mutedUntil DateTime?
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String  @id @default(cuid())
+  conversationId String
+  senderId       String?
+
+  kind            MessageKind @default(TEXT)
+  body            String?
+  mediaUrl        String?
+  durationSeconds Int?
+
+  /// Client-supplied id used to reconcile optimistic sends.
+  clientId String?
+
+  editedAt  DateTime?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  poll         Poll?
+
+  @@unique([conversationId, clientId])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model Poll {
+  id             String @id @default(cuid())
+  conversationId String
+  messageId      String @unique
+
+  question       String
+  allowsMultiple Boolean   @default(false)
+  closesAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  options      PollOption[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  label    String
+  position Int    @default(0)
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId, position])
+  @@map("poll_options")
+}
+
+model PollVote {
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([optionId, userId])
+  @@index([userId])
+  @@map("poll_votes")
+}
+
+/**
+ * ==================================================================== *
+ * Notifications
+ * ====================================================================
+ */
+
+model Notification {
+  id     String           @id @default(cuid())
+  userId String
+  type   NotificationType
+
+  title    String
+  body     String
+  imageUrl String?
+  deepLink String?
+  data     Json    @default("{}")
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dispatches NotificationDispatch[]
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// One row per delivery attempt per channel.
+///
+/// `dedupeKey` is what stops a restarted reminder worker from pinging everyone
+/// twice: for birthday reminders it is `reminder:<trackedBirthdayId>:<year>:<offset>`.
+model NotificationDispatch {
+  id             String  @id @default(cuid())
+  notificationId String?
+  userId         String
+
+  channel NotificationChannel
+  status  DispatchStatus      @default(QUEUED)
+
+  dedupeKey   String  @unique
+  providerRef String?
+  error       String?
+
+  trackedBirthdayId String?
+
+  attemptedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  notification    Notification?    @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackedBirthday TrackedBirthday? @relation(fields: [trackedBirthdayId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("notification_dispatches")
+}
+
+/**
+ * ==================================================================== *
+ * Moderation, audit, analytics
+ * ====================================================================
+ */
+
+model Report {
+  id         String           @id @default(cuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+
+  reason  ReportReason
+  details String?
+  status  ReportStatus @default(OPEN)
+
+  resolution   String?
+  resolvedById String?
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("reports")
+}
+
+model AuditLog {
+  id        String    @id @default(cuid())
+  actorId   String?
+  actorRole UserRole?
+
+  action     String
+  targetType String?
+  targetId   String?
+
+  before Json?
+  after  Json?
+  reason String?
+
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+/// Product analytics (spec §53). Deliberately holds no personal data beyond
+/// the user id, and `properties` is validated against an allow-list on write.
+model AnalyticsEvent {
+  id     String  @id @default(cuid())
+  userId String?
+  name   String
+
+  properties Json    @default("{}")
+  sessionId  String?
+  platform   String?
+  appVersion String?
+
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+  @@map("analytics_events")
+}
+
+/**
+ * ==================================================================== *
+ * AI gift assistant
+ * ====================================================================
+ */
+
+model AiConversation {
+  id     String @id @default(cuid())
+  userId String
+
+  recipientUserId   String?
+  trackedBirthdayId String?
+
+  /// Snapshot of the brief (budget, interests, relationship) for this thread.
+  context Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([userId, createdAt])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String @id @default(cuid())
+  conversationId String
+
+  role    AiRole
+  content String
+
+  model     String?
+  tokensIn  Int?
+  tokensOut Int?
+  latencyMs Int?
+
+  createdAt DateTime @default(now())
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}
+
+/// Per-day counter backing the AI suggestion quota (spec §54 premium tiers).
+model AiUsageDaily {
+  userId String
+  /// Civil date in the user's own time zone, as YYYY-MM-DD.
+  day    String
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+  @@map("ai_usage_daily")
+}

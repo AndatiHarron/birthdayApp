@@ -8,7 +8,9 @@ export default defineConfig({
     proxy: {
       // In development the dashboard talks to the local API through Vite, so no
       // CORS configuration is needed. Production sets VITE_API_URL instead.
-      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+      // 127.0.0.1, not localhost: Node 17+ resolves localhost to ::1 first,
+      // and the API listens on IPv4 only.
+      '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
     },
   },
   optimizeDeps: { include: ['@bday/shared'] },

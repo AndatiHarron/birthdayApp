@@ -22,6 +22,7 @@
     "db:seed": "npm run db:seed -w @bday/api",
     "db:reset": "npm run db:reset -w @bday/api",
     "db:studio": "npm run db:studio -w @bday/api",
+    "db:local": "npm run db:local -w @bday/api",
     "test": "npm run test -w @bday/api",
     "test:api": "npm run test -w @bday/api",
     "lint": "npm run lint -w @bday/api && npm run lint -w @bday/admin",

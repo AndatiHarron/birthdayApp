@@ -65,7 +65,8 @@
         }
       ],
       "expo-sharing",
-      "expo-image"
+      "expo-image",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": false

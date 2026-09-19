@@ -108,3 +108,9 @@ export const webhookLimiter = build('webhook', {
   max: 600,
   keyGenerator: (req) => req.ip ?? 'unknown',
 });
+
+/** One-tap cheers: generous for a joyful burst, not for a script. */
+export const cheerLimiter = build('cheer', {
+  windowMs: 60 * 1000,
+  max: 60,
+});

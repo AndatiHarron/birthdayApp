@@ -94,6 +94,7 @@ export function toPrivacyDto(privacy: PrivacySetting | null): PrivacySettings {
     discoverableByPhone: value.discoverableByPhone,
     discoverableByEmail: value.discoverableByEmail,
     discoverableByUsername: value.discoverableByUsername,
+    celebrateGlobally: value.celebrateGlobally ?? false,
   };
 }
 

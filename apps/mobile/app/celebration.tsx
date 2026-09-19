@@ -1,15 +1,15 @@
-import type { BirthdayMessageDto, CurrentUser, DigitalGiftDto, Paginated } from '@bday/shared';
-import { useQuery } from '@tanstack/react-query';
+import type { BirthdayMessageDto, CurrentUser, DigitalGiftDto, GlobalStatusDto, Paginated } from '@bday/shared';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Confetti } from '../src/components/Confetti';
 import { VoicePlayer } from '../src/components/VoiceRecorder';
 import { Avatar, Button, Card, Row, T } from '../src/components/ui';
-import { api } from '../src/lib/api';
+import { api, errorMessage } from '../src/lib/api';
 import { useAuth } from '../src/lib/auth';
 import { colors, gradients, radius, spacing } from '../src/theme';
 
@@ -20,6 +20,12 @@ export default function Celebration() {
   const today = useQuery({ queryKey: ['my-birthday-today'], queryFn: () => api.get<{ wishCount: number; giftCount: number; hasSurprise: boolean } | null>('/birthdays/today/me') });
   const wishes = useQuery({ queryKey: ['wishes-received'], queryFn: () => api.get<Paginated<BirthdayMessageDto>>('/birthday-messages/received', { limit: 50 }) });
   const gifts = useQuery({ queryKey: ['digital-received'], queryFn: () => api.get<DigitalGiftDto[]>('/digital-gifts/received') });
+  const global = useQuery({ queryKey: ['global', 'me'], queryFn: () => api.get<GlobalStatusDto>('/global/me') });
+  const knowThem = useMutation({
+    mutationFn: (userId: string) => api.post('/friends/request', { userId }),
+    onSuccess: () => Alert.alert('Request sent', 'Once they accept, you’re connected, and they can send you physical gifts too.'),
+    onError: (error) => Alert.alert('Could not connect', errorMessage(error)),
+  });
 
   useEffect(() => {
     if (wishes.data?.items.some((wish) => !wish.readAt)) void api.post('/birthday-messages/read', { all: true }).catch(() => undefined);
@@ -49,6 +55,11 @@ export default function Celebration() {
                 <T color={colors.white} center style={{ fontSize: 17 }}>You have received {today.data.wishCount} birthday wishes.</T>
                 <T color={colors.white} center style={{ fontSize: 17 }}>You have {today.data.giftCount} gifts waiting.</T>
                 {today.data.hasSurprise ? <T color={colors.white} center style={{ fontSize: 17 }}>✨ Your friends have something special planned.</T> : null}
+                {global.data && global.data.cheersReceived > 0 ? (
+                  <T color={colors.white} center style={{ fontSize: 17 }}>
+                    🌍 {global.data.cheersReceived} {global.data.cheersReceived === 1 ? 'person' : 'people'} around the world celebrated you.
+                  </T>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -73,7 +84,10 @@ export default function Celebration() {
             <Card key={wish.id} style={{ marginBottom: spacing.md }}>
               <Row gap={spacing.md} style={{ marginBottom: spacing.sm }}>
                 <Avatar name={wish.sender?.displayName ?? '🤫'} uri={wish.sender?.avatarUrl} size={36} />
-                <T variant="label">{wish.sender?.displayName ?? 'Someone special'}</T>
+                <View style={{ flex: 1 }}>
+                  <T variant="label">{wish.sender?.displayName ?? 'Someone special'}</T>
+                  {wish.fromStranger ? <T variant="caption" color={colors.textMuted}>🌍 Celebrating you from around the world</T> : null}
+                </View>
               </Row>
               {wish.card ? (
                 <View style={{ borderRadius: radius.lg, padding: spacing.xl, backgroundColor: wish.card.backgroundColor ?? colors.brandSoft, alignItems: 'center', overflow: 'hidden' }}>
@@ -104,6 +118,12 @@ export default function Celebration() {
                   );
                 })}
               </Row>
+              {wish.fromStranger && wish.sender ? (
+                <Row gap={spacing.sm} style={{ marginTop: spacing.sm }}>
+                  <Button small variant="secondary" icon="🤝" title="I know them" loading={knowThem.isPending && knowThem.variables === wish.sender.id} onPress={() => knowThem.mutate(wish.sender!.id)} />
+                  <Button small variant="ghost" title="Report" onPress={() => router.push({ pathname: '/report', params: { targetType: 'USER', targetId: wish.sender!.id } })} />
+                </Row>
+              ) : null}
             </Card>
           ))}
         </ScrollView>

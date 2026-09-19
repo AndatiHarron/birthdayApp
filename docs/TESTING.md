@@ -18,6 +18,7 @@ The integration tests run against a real Postgres. Unless `TEST_DATABASE_URL` is
 | `integration/group-gift` | Contributions settled only by the provider, progress, hidden contributors, signed sandbox webhook |
 | `integration/orders` | Order → payment → delivery timeline, admin-only routes |
 | `integration/public-pages` | Public wishlist and RSVP pages escape content and leak no reservation data |
+| `integration/global-birthdays` | Opt-in for adults only, stranger wishes and money allowed, physical gifts refused, least-celebrated-first feed, one cheer per person per year, blocks, birthday twins |
 | `unit/*` | Birthday maths, money and delivery rules, privacy and secrecy mappers, M-Pesa callback wiring |
 
 ## Manual test script
@@ -72,6 +73,16 @@ In development:
 
 ### 8. Birthday day
 - [ ] Set a test account's birthday to today → open the app → the celebration screen with confetti shows the wish and gift counts.
+
+### 8b. Global birthdays (celebrating strangers)
+You need three accounts. All must have a **full date of birth, including the year, and be 18 or older**.
+- [ ] User B: set their birthday to **today**, then **Home → 🌍 card** (or **Settings → Privacy → Global birthdays**) → turn on *Celebrate me globally*. Add a note, and optionally *I've rarely or never celebrated my birthday*.
+- [ ] User A (not B's friend): open **Global birthdays**. B appears under *Celebrating today*, with a *First celebration* badge if B set it. People nobody has celebrated yet are listed first.
+- [ ] A taps **Cheer**: confetti, and B gets *"🌍 Someone just celebrated your birthday!"*. A second tap does nothing, because it's one cheer per person per year.
+- [ ] A sends B a **wish** and a **digital gift**, including money (airtime or wallet credit). Both work. B sees *"🌍 Celebrating you from around the world"*, with **I know them** and **Report** buttons.
+- [ ] A tries to **buy B a physical gift** or **reserve an item on B's wishlist**: refused with *"Physical gifts are only for people you are connected with"*. It works once they're friends.
+- [ ] User C, who hasn't opted in: A can't wish or gift C. A minor account can't join or even see the feed.
+- [ ] **Birthday twins** tab: people who share your birthday and opted in.
 
 ### 9. Admin dashboard
 - [ ] Dashboard stats, users (search, suspend), orders (status, refund), payments (reconciliation), reports, broadcast notification, audit log.

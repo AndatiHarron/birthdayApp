@@ -158,6 +158,23 @@ export const LIMITS = {
   maxMessageLength: 2000,
 } as const;
 
+/**
+ * Global birthdays (celebrating strangers). Strangers may send wishes, cheers
+ * and digital gifts — including money — to adults who opted in; never
+ * physical gifts. These caps limit spam and fraud; per sender, rolling 24h.
+ */
+export const GLOBAL_BIRTHDAYS = {
+  minAge: 18,
+  maxNoteLength: 140,
+  strangerWishesPerDay: 30,
+  strangerGiftsPerDay: 20,
+  cheersPerDay: 300,
+  /** Largest single digital gift a stranger can send, in minor units (KES 10,000). */
+  maxStrangerGiftMinor: 1_000_000,
+  /** Cheer counts that trigger a notification to the birthday person. */
+  cheerMilestones: [1, 5, 10, 25, 50, 100, 250, 500, 1000],
+} as const;
+
 export const RESERVED_USERNAMES = [
   'admin',
   'administrator',

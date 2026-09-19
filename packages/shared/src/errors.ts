@@ -69,6 +69,13 @@ export const ErrorCode = {
   WEBHOOK_SIGNATURE_INVALID: 'WEBHOOK_SIGNATURE_INVALID',
   DUPLICATE_REQUEST: 'DUPLICATE_REQUEST',
 
+  // global birthdays
+  RECIPIENT_NOT_ACCEPTING: 'RECIPIENT_NOT_ACCEPTING',
+  PHYSICAL_GIFT_REQUIRES_CONNECTION: 'PHYSICAL_GIFT_REQUIRES_CONNECTION',
+  GLOBAL_CELEBRATION_NOT_ELIGIBLE: 'GLOBAL_CELEBRATION_NOT_ELIGIBLE',
+  STRANGER_LIMIT_REACHED: 'STRANGER_LIMIT_REACHED',
+  NOT_BIRTHDAY_TODAY: 'NOT_BIRTHDAY_TODAY',
+
   // catalogue / orders
   PRODUCT_UNAVAILABLE: 'PRODUCT_UNAVAILABLE',
   VENDOR_NOT_APPROVED: 'VENDOR_NOT_APPROVED',
@@ -152,6 +159,13 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   WEBHOOK_SIGNATURE_INVALID: 'The request signature could not be verified.',
   DUPLICATE_REQUEST: 'This request has already been processed.',
 
+  RECIPIENT_NOT_ACCEPTING: 'They only receive wishes and gifts from people they know.',
+  PHYSICAL_GIFT_REQUIRES_CONNECTION:
+    'Physical gifts are only for people you are connected with. Send a digital gift instead, or connect first.',
+  GLOBAL_CELEBRATION_NOT_ELIGIBLE: 'Global birthdays are for verified adults (18+) with a full date of birth.',
+  STRANGER_LIMIT_REACHED: 'You have celebrated so many people today! Come back tomorrow to spread more joy.',
+  NOT_BIRTHDAY_TODAY: 'It is not their birthday today.',
+
   PRODUCT_UNAVAILABLE: 'This gift is currently unavailable.',
   VENDOR_NOT_APPROVED: 'This vendor is not approved to sell yet.',
   ORDER_NOT_CANCELLABLE: 'This order can no longer be cancelled.',
@@ -229,6 +243,12 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   CURRENCY_MISMATCH: 400,
   WEBHOOK_SIGNATURE_INVALID: 401,
   DUPLICATE_REQUEST: 409,
+
+  RECIPIENT_NOT_ACCEPTING: 403,
+  PHYSICAL_GIFT_REQUIRES_CONNECTION: 403,
+  GLOBAL_CELEBRATION_NOT_ELIGIBLE: 403,
+  STRANGER_LIMIT_REACHED: 429,
+  NOT_BIRTHDAY_TODAY: 409,
 
   PRODUCT_UNAVAILABLE: 409,
   VENDOR_NOT_APPROVED: 403,

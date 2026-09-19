@@ -13,6 +13,8 @@ import type { GiftContribution, GroupGift, PaymentStatus, Prisma } from '@prisma
 import { AppError } from '../lib/errors';
 import { prisma, serializableTransaction, type Tx } from '../lib/prisma';
 import { RealtimeEvent, emitToGroupGift, emitToUser } from '../realtime/emitter';
+import { assertNotBlocked } from './access.service';
+import { assertKnownForPhysicalGift } from './global.service';
 import { notify, notifyMany } from './notification.service';
 import { createPaymentRecord, initiateWithProvider, toPaymentDto } from './payment.service';
 
@@ -192,6 +194,8 @@ async function resolveBeneficiary(
       select: { id: true, username: true, profile: { select: { displayName: true } } },
     });
     if (!user) throw new AppError('NOT_FOUND', { message: 'That account could not be found.' });
+    await assertNotBlocked(organizerId, user.id);
+    await assertKnownForPhysicalGift(organizerId, user.id);
     return {
       beneficiaryUserId: user.id,
       trackedBirthdayId: null,

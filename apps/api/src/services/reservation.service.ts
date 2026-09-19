@@ -3,6 +3,7 @@ import { AppError } from '../lib/errors';
 import { prisma, serializableTransaction, type Tx } from '../lib/prisma';
 import { toItemReservationView } from '../mappers/wishlist.mapper';
 import { RealtimeEvent, emitToUser, emitToWishlist } from '../realtime/emitter';
+import { assertKnownForPhysicalGift } from './global.service';
 import { assertCanViewWishlist } from './wishlist.service';
 import { notify } from './notification.service';
 
@@ -81,6 +82,8 @@ export async function reserveItem(
   if (!item) throw new AppError('WISHLIST_ITEM_NOT_FOUND');
   if (item.wishlist.ownerId === reserverId) throw new AppError('CANNOT_RESERVE_OWN_ITEM');
   await assertCanViewWishlist(item.wishlist, reserverId);
+  // Wishlist gifts are physical, so even a public wishlist needs a connection.
+  await assertKnownForPhysicalGift(reserverId, item.wishlist.ownerId);
 
   const result = await serializableTransaction(async (tx) => {
     const locked = await lockItem(tx, itemId);

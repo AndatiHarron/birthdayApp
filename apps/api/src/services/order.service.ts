@@ -17,6 +17,7 @@ import { prisma, serializableTransaction, type Tx } from '../lib/prisma';
 import { decodeCursor, encodeCursor } from '../lib/response';
 import { RealtimeEvent, emitToOrder, emitToUser } from '../realtime/emitter';
 import { assertNotBlocked } from './access.service';
+import { assertKnownForPhysicalGift } from './global.service';
 import { evaluateCoupon, redeemCoupon } from './coupon.service';
 import { notify } from './notification.service';
 import { createPaymentRecord, initiateWithProvider, toPaymentDto } from './payment.service';
@@ -126,6 +127,7 @@ async function resolveRecipient(buyerId: string, input: CreateOrderInput): Promi
       select: { id: true, username: true, phone: true, profile: { select: { displayName: true } } },
     });
     if (!user) throw new AppError('NOT_FOUND', { message: 'That person could not be found.' });
+    await assertKnownForPhysicalGift(buyerId, user.id);
     return {
       recipientUserId: user.id,
       trackedBirthdayId: null,

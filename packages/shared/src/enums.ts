@@ -247,6 +247,7 @@ export const NotificationType = {
   EVENT_RSVP: 'EVENT_RSVP',
   CHAT_MESSAGE: 'CHAT_MESSAGE',
   SYSTEM: 'SYSTEM',
+  BIRTHDAY_CHEER: 'BIRTHDAY_CHEER',
 } as const;
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 

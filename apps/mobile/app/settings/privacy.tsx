@@ -1,6 +1,6 @@
 import type { CurrentUser, PrivacySettings, Visibility } from '@bday/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Avatar, Button, Card, Chip, Divider, InlineError, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
@@ -62,6 +62,17 @@ export default function PrivacySettingsScreen() {
           <Toggle label="By phone number" value={settings.discoverableByPhone} onChange={(value) => set('discoverableByPhone', value)} />
           <Divider />
           <Toggle label="By email" value={settings.discoverableByEmail} onChange={(value) => set('discoverableByEmail', value)} />
+        </Card>
+      </Section>
+      <Section title="Global birthdays">
+        <Card onPress={() => router.push('/global')}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <T variant="label">🌍 {settings.celebrateGlobally ? 'You’re celebrated globally' : 'Let people around the world celebrate you'}</T>
+              <T variant="caption" color={colors.textMuted}>Strangers can cheer, wish and send digital gifts on your birthday. Never physical gifts. Adults only.</T>
+            </View>
+            <T color={colors.brand}>›</T>
+          </Row>
         </Card>
       </Section>
       <Button title="Save privacy settings" loading={save.isPending} onPress={() => save.mutate()} style={{ marginTop: spacing.xl }} />

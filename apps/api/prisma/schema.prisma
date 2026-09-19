@@ -249,6 +249,7 @@ enum NotificationType {
   EVENT_RSVP
   CHAT_MESSAGE
   SYSTEM
+  BIRTHDAY_CHEER
 }
 
 enum NotificationChannel {
@@ -418,6 +419,8 @@ model User {
   wishesSent              BirthdayMessage[]         @relation("BirthdayMessageSender")
   wishesReceived          BirthdayMessage[]         @relation("BirthdayMessageRecipient")
   messageReactions        BirthdayMessageReaction[]
+  cheersGiven             BirthdayCheer[]           @relation("CheerGiver")
+  cheersReceived          BirthdayCheer[]           @relation("CheerRecipient")
   thankYousSent           ThankYou[]                @relation("ThankYouSender")
   thankYousReceived       ThankYou[]                @relation("ThankYouRecipient")
   memories                Memory[]
@@ -474,6 +477,11 @@ model Profile {
   /// Sizes, favourite colours/brands, dislikes, allergies (spec §5).
   giftPreferences Json @default("{}")
 
+  /// Global birthdays: a short line strangers see on the "celebrating today" card.
+  celebrationNote  String?
+  /// "I've never really celebrated my birthday" — surfaced first in the global feed.
+  firstCelebration Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -499,6 +507,11 @@ model PrivacySetting {
   discoverableByPhone    Boolean @default(true)
   discoverableByEmail    Boolean @default(true)
   discoverableByUsername Boolean @default(true)
+
+  /// Global birthdays opt-in: listed in "celebrating today" and birthday twins,
+  /// and reachable by strangers with wishes, cheers and digital gifts (never
+  /// physical ones). Adults only; off by default.
+  celebrateGlobally Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1098,7 +1111,9 @@ model DigitalGift {
   valueMinor Int?
   currency   String?
 
-  isAnonymous Boolean @default(false)
+  isAnonymous  Boolean @default(false)
+  /// Sent by someone the recipient is not connected with (global birthdays).
+  fromStranger Boolean @default(false)
 
   deliverAt   DateTime?
   deliveredAt DateTime?
@@ -1195,10 +1210,12 @@ model BirthdayMessage {
   /// Which birthday this wish belongs to, so history groups cleanly by year.
   celebrationYear Int
 
-  isAnonymous Boolean   @default(false)
-  deliverAt   DateTime?
-  deliveredAt DateTime?
-  readAt      DateTime?
+  isAnonymous  Boolean   @default(false)
+  /// Sent by someone the recipient is not connected with (global birthdays).
+  fromStranger Boolean   @default(false)
+  deliverAt    DateTime?
+  deliveredAt  DateTime?
+  readAt       DateTime?
 
   createdAt DateTime @default(now())
 
@@ -2121,6 +2138,25 @@ model Report {
   @@index([status, createdAt])
   @@index([targetType, targetId])
   @@map("reports")
+}
+
+/// Global birthdays: a one-tap "I see you, happy birthday" from anyone.
+/// One per giver, recipient and celebration year, so counts mean people.
+model BirthdayCheer {
+  id              String   @id @default(cuid())
+  fromUserId      String
+  toUserId        String
+  celebrationYear Int
+  emoji           String   @default("🎉")
+  createdAt       DateTime @default(now())
+
+  from User @relation("CheerGiver", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User @relation("CheerRecipient", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId, celebrationYear])
+  @@index([toUserId, celebrationYear])
+  @@index([fromUserId, createdAt])
+  @@map("birthday_cheers")
 }
 
 model AuditLog {

@@ -100,6 +100,11 @@
               "CURRENCY_MISMATCH",
               "WEBHOOK_SIGNATURE_INVALID",
               "DUPLICATE_REQUEST",
+              "RECIPIENT_NOT_ACCEPTING",
+              "PHYSICAL_GIFT_REQUIRES_CONNECTION",
+              "GLOBAL_CELEBRATION_NOT_ELIGIBLE",
+              "STRANGER_LIMIT_REACHED",
+              "NOT_BIRTHDAY_TODAY",
               "PRODUCT_UNAVAILABLE",
               "VENDOR_NOT_APPROVED",
               "ORDER_NOT_CANCELLABLE",
@@ -288,6 +293,21 @@
             "const": 401
           },
           "DUPLICATE_REQUEST": {
+            "const": 409
+          },
+          "RECIPIENT_NOT_ACCEPTING": {
+            "const": 403
+          },
+          "PHYSICAL_GIFT_REQUIRES_CONNECTION": {
+            "const": 403
+          },
+          "GLOBAL_CELEBRATION_NOT_ELIGIBLE": {
+            "const": 403
+          },
+          "STRANGER_LIMIT_REACHED": {
+            "const": 429
+          },
+          "NOT_BIRTHDAY_TODAY": {
             "const": 409
           },
           "PRODUCT_UNAVAILABLE": {
@@ -2411,7 +2431,8 @@
                       "EVENT_INVITE",
                       "EVENT_RSVP",
                       "CHAT_MESSAGE",
-                      "SYSTEM"
+                      "SYSTEM",
+                      "BIRTHDAY_CHEER"
                     ],
                     "default": "SYSTEM"
                   },
@@ -2788,7 +2809,8 @@
                       "EVENT_INVITE",
                       "EVENT_RSVP",
                       "CHAT_MESSAGE",
-                      "SYSTEM"
+                      "SYSTEM",
+                      "BIRTHDAY_CHEER"
                     ],
                     "default": "SYSTEM"
                   },
@@ -14915,7 +14937,8 @@
                         "EVENT_INVITE",
                         "EVENT_RSVP",
                         "CHAT_MESSAGE",
-                        "SYSTEM"
+                        "SYSTEM",
+                        "BIRTHDAY_CHEER"
                       ]
                     },
                     "maxItems": 40
@@ -15594,6 +15617,272 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/global/me": {
+      "get": {
+        "tags": [
+          "Global birthdays"
+        ],
+        "summary": "My global-birthdays settings, eligibility and how celebrated I have been",
+        "operationId": "getGlobalMe",
+        "parameters": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Global birthdays"
+        ],
+        "summary": "Opt in or out, and set what strangers see (adults only)",
+        "operationId": "putGlobalMe",
+        "parameters": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "celebrateGlobally": {
+                    "type": "boolean"
+                  },
+                  "celebrationNote": {
+                    "type": "string",
+                    "maxLength": 140,
+                    "nullable": true
+                  },
+                  "firstCelebration": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/global/today": {
+      "get": {
+        "tags": [
+          "Global birthdays"
+        ],
+        "summary": "Everyone opted in whose birthday is today where they live, least celebrated first",
+        "operationId": "getGlobalToday",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 30
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/global/twins": {
+      "get": {
+        "tags": [
+          "Global birthdays"
+        ],
+        "summary": "People who share your birthday, anywhere in the world",
+        "operationId": "getGlobalTwins",
+        "parameters": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/global/{id}/cheer": {
+      "post": {
+        "tags": [
+          "Global birthdays"
+        ],
+        "summary": "Cheer someone on their birthday (once per person per year)",
+        "operationId": "postGlobalIdCheer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string",
+                    "enum": [
+                      "🎉",
+                      "🎂",
+                      "🎈",
+                      "❤️",
+                      "🌍",
+                      "✨"
+                    ],
+                    "default": "🎉"
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }

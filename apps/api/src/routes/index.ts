@@ -30,6 +30,7 @@ import {
   uploads,
 } from './social.routes';
 import users, { interests } from './user.routes';
+import { globalBirthdays } from './global.routes';
 import { gifts, wishlistItems, wishlists } from './wishlist.routes';
 
 /**
@@ -55,6 +56,7 @@ export const modules: ApiModule[] = [
   digitalGifts,
   wallet,
   wishes,
+  globalBirthdays,
   cards,
   thankYous,
   memories,

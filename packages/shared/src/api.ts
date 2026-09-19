@@ -143,6 +143,8 @@ export interface PrivacySettings {
   discoverableByPhone: boolean;
   discoverableByEmail: boolean;
   discoverableByUsername: boolean;
+  /** Listed in global birthdays and reachable by strangers (digital only). */
+  celebrateGlobally: boolean;
 }
 
 export interface NotificationPreferences {
@@ -447,6 +449,8 @@ export interface BirthdayMessageDto {
   deliveredAt: string | null;
   readAt: string | null;
   reactions: Array<{ emoji: string; count: number; mine: boolean }>;
+  /** From someone the recipient is not connected with (global birthdays). */
+  fromStranger: boolean;
   createdAt: string;
 }
 
@@ -539,6 +543,8 @@ export interface DigitalGiftDto {
   openedAt: string | null;
   redemptionCode: string | null;
   paymentStatus: PaymentStatus | null;
+  /** From someone the recipient is not connected with (global birthdays). */
+  fromStranger: boolean;
   createdAt: string;
 }
 
@@ -1018,4 +1024,64 @@ export interface RealtimeEnvelope<T = unknown> {
   room: string;
   payload: T;
   at: string;
+}
+
+/* ------------------------------ global birthdays ------------------------------ */
+
+/** Someone celebrating today, as a stranger sees them. Never includes birth year or contact details. */
+export interface GlobalCelebrantDto {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  city: string | null;
+  countryCode: string;
+  /** Only when they allow their age to be shown. */
+  turningAge: number | null;
+  note: string | null;
+  /** They told us they have rarely or never celebrated their birthday. */
+  firstCelebration: boolean;
+  cheerCount: number;
+  wishCount: number;
+  cheeredByMe: boolean;
+  /** True when their birthday is today in their own time zone. */
+  isToday: boolean;
+}
+
+export type GlobalIneligibleReason = 'NO_BIRTH_YEAR' | 'UNDER_AGE' | 'NOT_VERIFIED' | null;
+
+export interface GlobalStatusDto {
+  celebrateGlobally: boolean;
+  celebrationNote: string | null;
+  firstCelebration: boolean;
+  /** Whether this user may opt in and celebrate strangers. */
+  eligible: boolean;
+  ineligibleReason: GlobalIneligibleReason;
+  isMyBirthdayToday: boolean;
+  /** This celebration year: people who cheered or wished me without knowing me. */
+  cheersReceived: number;
+  strangerWishesReceived: number;
+  strangerGiftsReceived: number;
+  /** People I have cheered, wished or gifted in the last 24 hours. */
+  peopleCelebratedToday: number;
+}
+
+export interface GlobalTodayDto {
+  /** Everyone opted in whose birthday is today where they live. */
+  totalCelebrating: number;
+  countries: number;
+  /** Least-celebrated first, so nobody is overlooked. */
+  items: GlobalCelebrantDto[];
+}
+
+export interface BirthdayTwinsDto {
+  month: number | null;
+  day: number | null;
+  total: number;
+  items: GlobalCelebrantDto[];
+}
+
+export interface CheerResultDto {
+  cheerCount: number;
+  cheeredByMe: true;
 }

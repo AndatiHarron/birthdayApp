@@ -107,6 +107,7 @@ export const DEFAULT_PRIVACY = {
   discoverableByPhone: true,
   discoverableByEmail: true,
   discoverableByUsername: true,
+  celebrateGlobally: false,
 } as const;
 
 export type PrivacyShape = {
@@ -119,6 +120,8 @@ export type PrivacyShape = {
   discoverableByPhone: boolean;
   discoverableByEmail: boolean;
   discoverableByUsername: boolean;
+  /** Optional: many queries select only the visibility columns. */
+  celebrateGlobally?: boolean;
 };
 
 export function privacyOrDefaults(privacy: PrivacyShape | null | undefined): PrivacyShape {

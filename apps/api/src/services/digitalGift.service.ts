@@ -1,5 +1,6 @@
 import {
   DIGITAL_GIFT_META,
+  GLOBAL_BIRTHDAYS,
   type DigitalGiftCatalogItem,
   type DigitalGiftDto,
   type PaymentDto,
@@ -11,6 +12,7 @@ import { AppError } from '../lib/errors';
 import { prisma, type Tx } from '../lib/prisma';
 import { RealtimeEvent, emitToUser } from '../realtime/emitter';
 import { isBlockedEitherWay } from './access.service';
+import { assertCanReach } from './global.service';
 import { notify } from './notification.service';
 import { createPaymentRecord, initiateWithProvider, toPaymentDto } from './payment.service';
 import { toCardDto } from './wish.service';
@@ -90,6 +92,7 @@ function toDigitalGiftDto(row: DigitalGiftRow, viewerId: string): DigitalGiftDto
     // it, and only after they have opened the gift.
     redemptionCode: isRecipient && row.openedAt ? row.redemptionCode : null,
     paymentStatus: row.paymentStatus,
+    fromStranger: row.fromStranger,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -118,6 +121,7 @@ export async function sendDigitalGift(
   }
 
   let recipientUserId = input.recipientUserId ?? null;
+  let fromStranger = false;
   if (!recipientUserId && input.recipientPhone) {
     const byPhone = await prisma.user.findFirst({
       where: { phone: input.recipientPhone, deletedAt: null },
@@ -136,6 +140,16 @@ export async function sendDigitalGift(
     });
     if (!recipient) throw new AppError('NOT_FOUND', { message: 'That account could not be found.' });
     if (await isBlockedEitherWay(senderId, recipientUserId)) throw new AppError('BLOCKED_BY_USER');
+    // Someone the sender reached by typing their phone number is someone they
+    // know. Picking an account directly goes through the global-birthdays rules.
+    if (input.recipientUserId) {
+      ({ fromStranger } = await assertCanReach(senderId, recipientUserId, 'GIFT'));
+      if (fromStranger && (input.valueMinor ?? 0) > GLOBAL_BIRTHDAYS.maxStrangerGiftMinor) {
+        throw new AppError('VALIDATION_ERROR', {
+          fieldErrors: { 'body.valueMinor': [`Gifts to people you have not met are capped at ${GLOBAL_BIRTHDAYS.maxStrangerGiftMinor / 100}`] },
+        });
+      }
+    }
   } else if (!input.recipientPhone) {
     throw new AppError('VALIDATION_ERROR', { message: 'Choose who to send this to.' });
   }
@@ -172,6 +186,7 @@ export async function sendDigitalGift(
         valueMinor: input.valueMinor ?? null,
         currency: input.currency ?? null,
         isAnonymous: input.isAnonymous,
+        fromStranger,
         deliverAt,
         // Free gifts land straight away; paid ones wait for settlement.
         deliveredAt: !needsPayment && dueNow ? new Date() : null,

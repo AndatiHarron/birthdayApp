@@ -17,6 +17,7 @@ import { prisma, type Tx } from '../lib/prisma';
 import { decodeCursor, encodeCursor } from '../lib/response';
 import { RealtimeEvent, emitToUser } from '../realtime/emitter';
 import { isBlockedEitherWay } from './access.service';
+import { assertCanReach } from './global.service';
 import { notify } from './notification.service';
 
 /**
@@ -95,6 +96,7 @@ function toMessageDto(row: MessageRow, viewerId: string): BirthdayMessageDto {
       count: value.count,
       mine: value.mine,
     })),
+    fromStranger: row.fromStranger,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -238,6 +240,9 @@ export async function sendBirthdayMessage(
   });
   if (!recipient) throw new AppError('NOT_FOUND', { message: 'That account could not be found.' });
   if (await isBlockedEitherWay(senderId, recipientUserId)) throw new AppError('BLOCKED_BY_USER');
+  // A birthday on the sender's own calendar is someone they know; anyone else
+  // goes through the global-birthdays rules (opt-in, adults, daily cap).
+  const { fromStranger } = trackedBirthdayId ? { fromStranger: false } : await assertCanReach(senderId, recipientUserId, 'WISH');
 
   const celebrationYear = await resolveCelebrationYear(recipientUserId);
   const deliverAt = input.deliverAt ? new Date(input.deliverAt) : null;
@@ -258,6 +263,7 @@ export async function sendBirthdayMessage(
         cardId,
         celebrationYear,
         isAnonymous: input.isAnonymous,
+        fromStranger,
         deliverAt,
         deliveredAt: deliverNow ? new Date() : null,
       },
@@ -285,9 +291,10 @@ export async function deliverWishNotification(messageId: string): Promise<void> 
       id: true,
       recipientUserId: true,
       isAnonymous: true,
+      fromStranger: true,
       body: true,
       kind: true,
-      sender: { select: { username: true, profile: { select: { displayName: true, avatarUrl: true } } } },
+      sender: { select: { username: true, profile: { select: { displayName: true, avatarUrl: true, city: true } } } },
     },
   });
   if (!message) return;
@@ -308,7 +315,9 @@ export async function deliverWishNotification(messageId: string): Promise<void> 
   await notify({
     userId: message.recipientUserId,
     type: 'BIRTHDAY_WISH_RECEIVED',
-    title: `🎉 ${senderName} wished you a happy birthday`,
+    title: message.fromStranger
+      ? `🌍 ${senderName}${message.isAnonymous || !message.sender?.profile?.city ? '' : ` in ${message.sender.profile.city}`} celebrated your birthday`
+      : `🎉 ${senderName} wished you a happy birthday`,
     body: preview,
     deepLink: 'wishes',
     data: { messageId: message.id },

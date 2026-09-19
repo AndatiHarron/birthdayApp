@@ -93,6 +93,8 @@ export function routeForDeepLink(link: string | null | undefined): string | null
       return '/gift-history';
     case 'wallet':
       return '/wallet';
+    case 'global':
+      return '/global';
     default:
       return '/notifications';
   }

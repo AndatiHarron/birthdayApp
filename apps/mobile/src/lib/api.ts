@@ -122,7 +122,7 @@ export const api = {
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
   delete: <T>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
-  upload: async (kind: 'avatar' | 'wishlist' | 'card' | 'memory' | 'voice' | 'chat', file: { uri: string; name: string; type: string }) => {
+  upload: async (kind: 'avatar' | 'wishlist' | 'card' | 'memory' | 'voice' | 'chat' | 'wish', file: { uri: string; name: string; type: string }) => {
     const form = new FormData();
     form.append('file', file as unknown as Blob);
     return request<{ url: string; key: string; contentType: string; size: number }>('POST', `/uploads/${kind}`, { form });

@@ -110,6 +110,8 @@ import UserPlus from 'lucide-react-native/icons/user-plus';
 import Users from 'lucide-react-native/icons/users';
 import UtensilsCrossed from 'lucide-react-native/icons/utensils-crossed';
 import Volleyball from 'lucide-react-native/icons/volleyball';
+import Volume2 from 'lucide-react-native/icons/volume-2';
+import VolumeX from 'lucide-react-native/icons/volume-x';
 import Wallet from 'lucide-react-native/icons/wallet';
 import Watch from 'lucide-react-native/icons/watch';
 import Wifi from 'lucide-react-native/icons/wifi';
@@ -248,6 +250,8 @@ const ICONS = {
   tent: Tent,
   signal: Signal,
   coins: Coins,
+  sound: Volume2,
+  mute: VolumeX,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

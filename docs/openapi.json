@@ -13875,7 +13875,7 @@
           "Uploads"
         ],
         "summary": "Upload a photo, video or voice note (multipart field \"file\")",
-        "description": "Kinds: avatar, wishlist, card, sticker, memory, voice, chat, product. File contents are checked against their declared type.",
+        "description": "Kinds: avatar, wishlist, card, sticker, wish, memory, voice, chat, product. File contents are checked against their declared type.",
         "operationId": "postUploadsKind",
         "parameters": [
           {
@@ -13889,6 +13889,7 @@
                 "wishlist",
                 "card",
                 "sticker",
+                "wish",
                 "memory",
                 "voice",
                 "chat",

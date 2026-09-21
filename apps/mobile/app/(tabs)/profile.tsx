@@ -16,7 +16,7 @@ const LINKS: Array<{ section: string; items: Array<{ icon: IconName; label: stri
       { icon: 'party', label: 'Events', href: '/events' },
       { icon: 'secret', label: 'Surprises & group gifts', href: '/surprises' },
       { icon: 'chat', label: 'Chats', href: '/chats' },
-      { icon: 'mail', label: 'Wishes I received', href: '/celebration' },
+      { icon: 'mail', label: 'Wishes I received', href: '/wishes' },
     ],
   },
   {

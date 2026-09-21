@@ -84,7 +84,7 @@ Access tokens expire after 15 minutes by default, and clients refresh them autom
 | `/ai` | Gift suggestions (LLM) and gift matching (rules-based) |
 | `/search` | Global search |
 | `/global` | Global birthdays: `GET/PUT /me` (opt in; adults only), `GET /today` (celebrating now, least celebrated first), `GET /twins`, `POST /:userId/cheer` |
-| `/uploads/:kind` | File uploads |
+| `/uploads/:kind` | File uploads. `wish` accepts photos, GIFs and video (64MB) for the wish wall |
 | `/reports`, `/analytics/events` | User reports, product analytics |
 | `/admin/*` | Admin only (`ADMIN` or `SUPER_ADMIN`) |
 

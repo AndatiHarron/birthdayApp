@@ -85,6 +85,7 @@ export function routeForDeepLink(link: string | null | undefined): string | null
     case 'wishlist':
       return rest[0] === 'user' ? `/person/${rest[1]}` : '/wishlist';
     case 'wishes':
+      return '/wishes';
     case 'celebration':
       return '/celebration';
     case 'gifts':

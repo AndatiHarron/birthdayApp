@@ -18,6 +18,8 @@ The integration tests run against a real Postgres. Unless `TEST_DATABASE_URL` is
 | `integration/group-gift` | Contributions settled only by the provider, progress, hidden contributors, signed sandbox webhook |
 | `integration/orders` | Order → payment → delivery timeline, admin-only routes |
 | `integration/public-pages` | Public wishlist and RSVP pages escape content and leak no reservation data |
+| `integration/wishes` | Photo, GIF and video uploads for wishes, a video wish round-trip, marking read, reacting and un-reacting |
+| `integration/public-profile` | The /@username page: publishing, claimed gifts staying anonymous, escaping, the gifting toggle, hidden delivery address |
 | `integration/global-birthdays` | Opt-in for adults only, stranger wishes and money allowed, physical gifts refused, least-celebrated-first feed, one cheer per person per year, blocks, birthday twins |
 | `unit/*` | Birthday maths, money and delivery rules, privacy and secrecy mappers, M-Pesa callback wiring |
 
@@ -74,6 +76,14 @@ In development:
 ### 8. Birthday day
 - [ ] Set a test account's birthday to today → open the app → the celebration screen with confetti shows the wish and gift counts.
 
+### 8a. The wish wall
+- [ ] Send wishes to a test account in several forms: text, card, photo, **GIF**, **video** (record one) and voice.
+- [ ] As that account: **Profile → Wishes I received** (or *Play wishes* on the birthday screen). Wishes play **one per screen**; swipe up for the next.
+- [ ] A video plays automatically and loops; **tap once** to mute or unmute. A GIF animates. A voice wish shows the sender with a player.
+- [ ] **Double-tap anywhere** → a heart flies up, confetti bursts, and the ❤️ reaction is saved. The sender sees it.
+- [ ] Wishes from strangers carry a *From around the world* badge.
+- [ ] The counter at the top reads "3 / 12", and wishes stop being marked unread as you pass them.
+
 ### 8b. Global birthdays (celebrating strangers)
 You need three accounts. All must have a **full date of birth, including the year, and be 18 or older**.
 - [ ] User B: set their birthday to **today**, then **Home → 🌍 card** (or **Settings → Privacy → Global birthdays**) → turn on *Celebrate me globally*. Add a note, and optionally *I've rarely or never celebrated my birthday*.
@@ -104,5 +114,6 @@ You need three accounts. All must have a **full date of birth, including the yea
 These are not built yet, so skip them when testing:
 
 - Google and Apple sign-in buttons in the mobile app. The server side is ready.
-- GIF and video wishes, video thank-yous, and stickers or music in the card editor.
+- Video thank-yous, and stickers or music in the card editor.
+- A GIF search picker (Giphy or Tenor): GIFs work today by picking one from your photos, which then animates in the wall. A search picker needs a provider API key.
 - Push notifications on real devices. They need an EAS project ID and, on Android, a development build: Expo Go has not supported remote push on Android since SDK 53. In-app notifications (the bell) work everywhere. See [NOTIFICATIONS.md](NOTIFICATIONS.md).

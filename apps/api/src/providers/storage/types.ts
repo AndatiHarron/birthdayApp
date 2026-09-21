@@ -38,6 +38,12 @@ export const UPLOAD_KINDS = {
   wishlist: { folder: 'wishlist', maxBytes: 8 * 1024 * 1024, types: ['image/jpeg', 'image/png', 'image/webp'] },
   card: { folder: 'cards', maxBytes: 8 * 1024 * 1024, types: ['image/jpeg', 'image/png', 'image/webp'] },
   sticker: { folder: 'stickers', maxBytes: 2 * 1024 * 1024, types: ['image/png', 'image/webp', 'image/gif'] },
+  /** Birthday wishes: a photo, an animated GIF or a short video. */
+  wish: {
+    folder: 'wishes',
+    maxBytes: 64 * 1024 * 1024,
+    types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/quicktime'],
+  },
   memory: {
     folder: 'memories',
     maxBytes: 64 * 1024 * 1024,

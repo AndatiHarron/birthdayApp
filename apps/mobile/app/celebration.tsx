@@ -76,6 +76,15 @@ export default function Celebration() {
             </Card>
           ) : null}
 
+          {wishes.data && wishes.data.items.length > 0 ? (
+            <Button
+              icon="play"
+              title={`Play ${wishes.data.items.length} ${wishes.data.items.length === 1 ? 'wish' : 'wishes'}`}
+              onPress={() => router.push('/wishes')}
+              style={{ marginBottom: spacing.lg }}
+            />
+          ) : null}
+
           <T variant="heading" color={colors.white} style={{ marginBottom: spacing.md }}>
             Wishes
           </T>

@@ -5,13 +5,14 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { VoiceRecorder } from '../../src/components/VoiceRecorder';
+import { WishVideo } from '../../src/components/WishVideo';
 import { Avatar, Button, Card, Chip, EmptyState, Field, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api, fieldError } from '../../src/lib/api';
-import { pickAndUploadImage } from '../../src/lib/media';
+import { pickAndUploadImage, pickAndUploadWishMedia, type PickedMedia } from '../../src/lib/media';
 import { useRecipient } from '../../src/lib/recipient';
 import { colors, radius, spacing } from '../../src/theme';
 
-type Kind = 'TEXT' | 'CARD' | 'IMAGE' | 'VOICE';
+type Kind = 'TEXT' | 'CARD' | 'IMAGE' | 'GIF' | 'VIDEO' | 'VOICE';
 
 /** Birthday wishes and personalised cards (spec §23, §24). */
 export default function SendWish() {
@@ -25,6 +26,7 @@ export default function SendWish() {
   const [headline, setHeadline] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [media, setMedia] = useState<PickedMedia | null>(null);
   const [voice, setVoice] = useState<{ url: string; durationSeconds: number } | null>(null);
   const [anonymous, setAnonymous] = useState(false);
 
@@ -37,8 +39,8 @@ export default function SendWish() {
         ...target,
         kind,
         body: body.trim() || null,
-        mediaUrl: kind === 'IMAGE' ? mediaUrl : kind === 'VOICE' ? voice?.url : null,
-        durationSeconds: kind === 'VOICE' ? voice?.durationSeconds : null,
+        mediaUrl: kind === 'IMAGE' ? mediaUrl : kind === 'GIF' || kind === 'VIDEO' ? media?.url : kind === 'VOICE' ? voice?.url : null,
+        durationSeconds: kind === 'VOICE' ? voice?.durationSeconds : kind === 'VIDEO' ? media?.durationSeconds : null,
         isAnonymous: anonymous,
         card:
           kind === 'CARD' && template
@@ -83,6 +85,8 @@ export default function SendWish() {
         <Chip icon="mail" label="Card" selected={kind === 'CARD'} onPress={() => setKind('CARD')} />
         <Chip icon="edit" label="Message" selected={kind === 'TEXT'} onPress={() => setKind('TEXT')} />
         <Chip icon="camera" label="Photo" selected={kind === 'IMAGE'} onPress={() => setKind('IMAGE')} />
+        <Chip icon="video" label="Video" selected={kind === 'VIDEO'} onPress={() => setKind('VIDEO')} />
+        <Chip icon="sparkles" label="GIF" selected={kind === 'GIF'} onPress={() => setKind('GIF')} />
         <Chip icon="mic" label="Voice" selected={kind === 'VOICE'} onPress={() => setKind('VOICE')} />
       </Row>
       <InlineError error={send.error} />
@@ -136,6 +140,43 @@ export default function SendWish() {
             {mediaUrl ? <Image source={{ uri: mediaUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.textMuted}>Choose a photo</T>}
           </Pressable>
           <Field label="Caption" value={body} onChangeText={setBody} style={{ marginTop: spacing.md }} />
+        </View>
+      ) : null}
+
+      {kind === 'VIDEO' || kind === 'GIF' ? (
+        <View style={{ marginTop: spacing.lg }}>
+          <View style={{ height: 240, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+            {media ? (
+              media.kind === 'VIDEO' ? (
+                <WishVideo url={media.url} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <Image source={{ uri: media.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+              )
+            ) : (
+              <T color={colors.textMuted}>{kind === 'VIDEO' ? 'Record or choose a video (up to 60s)' : 'Choose a GIF from your photos'}</T>
+            )}
+          </View>
+          <Row gap={spacing.sm} style={{ marginTop: spacing.md }}>
+            {kind === 'VIDEO' ? (
+              <Button
+                small
+                icon="camera"
+                title="Record"
+                variant="secondary"
+                onPress={() => void pickAndUploadWishMedia({ video: true, camera: true }).then((picked) => picked && setMedia(picked))}
+                style={{ flex: 1 }}
+              />
+            ) : null}
+            <Button
+              small
+              icon="image"
+              title={kind === 'VIDEO' ? 'Choose a video' : 'Choose a GIF'}
+              variant="secondary"
+              onPress={() => void pickAndUploadWishMedia({ video: kind === 'VIDEO' }).then((picked) => picked && setMedia(picked))}
+              style={{ flex: 1 }}
+            />
+          </Row>
+          <Field label="Caption (optional)" value={body} onChangeText={setBody} style={{ marginTop: spacing.md }} />
         </View>
       ) : null}
 

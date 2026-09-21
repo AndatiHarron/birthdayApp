@@ -16,8 +16,8 @@ import { logger } from '../lib/logger';
 import { prisma, serializableTransaction, type Tx } from '../lib/prisma';
 import { decodeCursor, encodeCursor } from '../lib/response';
 import { RealtimeEvent, emitToOrder, emitToUser } from '../realtime/emitter';
-import { assertNotBlocked } from './access.service';
-import { assertKnownForPhysicalGift } from './global.service';
+import { areFriends, assertNotBlocked } from './access.service';
+import { acceptsGiftsFromAnyone, assertKnownForPhysicalGift } from './global.service';
 import { evaluateCoupon, redeemCoupon } from './coupon.service';
 import { notify } from './notification.service';
 import { createPaymentRecord, initiateWithProvider, toPaymentDto } from './payment.service';
@@ -40,8 +40,22 @@ const ORDER_INCLUDE = {
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof ORDER_INCLUDE }>;
 
-function toDeliveryDto(delivery: OrderRow['delivery']): DeliveryDto | null {
+function toDeliveryDto(delivery: OrderRow['delivery'], hideAddress = false): DeliveryDto | null {
   if (!delivery) return null;
+  if (hideAddress) {
+    // The buyer gifted through a public link: they see progress, never the address.
+    return {
+      ...toDeliveryDto(delivery)!,
+      recipientPhone: null,
+      addressLine1: null,
+      addressLine2: null,
+      city: null,
+      area: null,
+      instructions: null,
+      latitude: null,
+      longitude: null,
+    };
+  }
   return {
     id: delivery.id,
     status: delivery.status,
@@ -98,7 +112,7 @@ export function toOrderDto(order: OrderRow, viewerId: string | null): OrderDto {
       wishlistItemId: item.wishlistItemId,
     })),
     payment: isBuyer && payment ? toPaymentDto(payment) : null,
-    delivery: toDeliveryDto(order.delivery),
+    delivery: toDeliveryDto(order.delivery, order.addressFromRecipient && isBuyer),
     recipient: order.recipientName
       ? { userId: order.recipientUserId, name: order.recipientName, phone: isBuyer ? order.recipientPhone : null }
       : null,
@@ -160,7 +174,37 @@ async function resolveRecipient(buyerId: string, input: CreateOrderInput): Promi
   };
 }
 
-async function resolveAddress(buyerId: string, input: CreateOrderInput) {
+async function resolveAddress(buyerId: string, input: CreateOrderInput, recipientUserId: string | null) {
+  // Public-page gifting: the buyer never learns where the gift goes. The
+  // recipient's own saved address is copied onto the delivery instead, and
+  // `addressFromRecipient` keeps it hidden from the buyer afterwards.
+  if (input.useRecipientAddress) {
+    if (!recipientUserId) throw new AppError('VALIDATION_ERROR', { message: 'Choose who this gift is for.' });
+    if (!(await acceptsGiftsFromAnyone(recipientUserId))) {
+      const connected = await areFriends(buyerId, recipientUserId);
+      if (!connected) throw new AppError('PHYSICAL_GIFT_REQUIRES_CONNECTION');
+    }
+    const saved = await prisma.deliveryAddress.findFirst({
+      where: { userId: recipientUserId, deletedAt: null },
+      orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+    });
+    if (!saved) {
+      throw new AppError('VALIDATION_ERROR', {
+        message: 'They have not saved a delivery address yet, so a gift cannot be sent to them. Send a digital gift instead.',
+      });
+    }
+    return {
+      recipientName: saved.recipientName,
+      phone: saved.phone,
+      addressLine1: saved.addressLine1,
+      addressLine2: saved.addressLine2,
+      city: saved.city,
+      area: saved.area,
+      latitude: saved.latitude,
+      longitude: saved.longitude,
+      instructions: saved.instructions,
+    };
+  }
   if (input.deliveryTarget === 'SENDER' && !input.deliveryAddressId && !input.deliveryAddress) {
     return null;
   }
@@ -230,7 +274,7 @@ export async function createOrder(buyerId: string, input: CreateOrderInput): Pro
   }
 
   const recipient = await resolveRecipient(buyerId, input);
-  const address = await resolveAddress(buyerId, input);
+  const address = await resolveAddress(buyerId, input, recipient.recipientUserId);
   const scheduledDate = parseScheduledDate(input.scheduledDate);
 
   const productIds = Array.from(new Set(input.items.map((item) => item.productId)));
@@ -327,6 +371,7 @@ export async function createOrder(buyerId: string, input: CreateOrderInput): Pro
         totalMinor,
         currency,
         deliveryTarget: input.deliveryTarget,
+        addressFromRecipient: input.useRecipientAddress,
         giftMessage: input.giftMessage ?? null,
         isAnonymous: input.isAnonymous,
         scheduledDate,

@@ -14,13 +14,13 @@ import { Stack, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Confetti } from '../src/components/Confetti';
-import { Avatar, Badge, Button, Card, Chip, EmptyState, ErrorState, Field, InlineError, Row, Screen, Section, SkeletonCard, T, Toggle } from '../src/components/ui';
+import { Avatar, Badge, Button, Card, Chip, EmptyState, ErrorState, Field, IconTile, InlineError, Row, Screen, Section, SkeletonCard, T, Toggle } from '../src/components/ui';
 import { api } from '../src/lib/api';
 import { colors, gradients, radius, spacing } from '../src/theme';
 
 /** 🇰🇪 from "KE". */
 function flag(countryCode: string): string {
-  return /^[A-Z]{2}$/.test(countryCode) ? String.fromCodePoint(...countryCode.split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '🌍';
+  return /^[A-Z]{2}$/.test(countryCode) ? String.fromCodePoint(...countryCode.split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '';
 }
 
 const INELIGIBLE_COPY: Record<string, string> = {
@@ -68,7 +68,7 @@ export default function GlobalBirthdays() {
         <Stack.Screen options={{ title: 'Global birthdays' }} />
 
         <LinearGradient colors={gradients.celebration} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
-          <T style={{ fontSize: 44 }}>🌍🎂</T>
+          <IconTile name="globe" size={52} tone="onDark" />
           <T variant="title" color={colors.white} style={{ marginTop: spacing.sm }}>
             {today.data ? `${today.data.totalCelebrating} ${today.data.totalCelebrating === 1 ? 'person is' : 'people are'} celebrating today` : 'Celebrate someone today'}
           </T>
@@ -79,7 +79,7 @@ export default function GlobalBirthdays() {
           {status.data && status.data.peopleCelebratedToday > 0 ? (
             <View style={{ marginTop: spacing.md, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 }}>
               <T variant="label" color={colors.white}>
-                💜 You made {status.data.peopleCelebratedToday} {status.data.peopleCelebratedToday === 1 ? 'person' : 'people'} smile today
+                You made {status.data.peopleCelebratedToday} {status.data.peopleCelebratedToday === 1 ? 'person' : 'people'} smile today
               </T>
             </View>
           ) : null}
@@ -91,15 +91,15 @@ export default function GlobalBirthdays() {
 
         {status.data && !eligible ? (
           <Card style={{ marginTop: spacing.lg }}>
-            <EmptyState emoji="🔒" title="Not available yet" message={INELIGIBLE_COPY[status.data.ineligibleReason ?? 'NOT_VERIFIED']} />
+            <EmptyState icon="lock" title="Not available yet" message={INELIGIBLE_COPY[status.data.ineligibleReason ?? 'NOT_VERIFIED']} />
           </Card>
         ) : null}
 
         {eligible ? (
           <>
             <Row style={{ marginTop: spacing.xl }}>
-              <Chip label="🎂 Celebrating today" selected={tab === 'today'} onPress={() => setTab('today')} />
-              <Chip label="👯 Birthday twins" selected={tab === 'twins'} onPress={() => setTab('twins')} />
+              <Chip icon="cake" label="Celebrating today" selected={tab === 'today'} onPress={() => setTab('today')} />
+              <Chip icon="users" label="Birthday twins" selected={tab === 'twins'} onPress={() => setTab('twins')} />
             </Row>
             <InlineError error={cheer.error} />
 
@@ -109,7 +109,7 @@ export default function GlobalBirthdays() {
                 {today.error ? <ErrorState error={today.error} onRetry={() => void today.refetch()} /> : null}
                 {today.data?.items.length === 0 ? (
                   <Card>
-                    <EmptyState emoji="🌅" title="No one yet today" message="As the day begins around the world, people celebrating will appear here. Check back soon!" />
+                    <EmptyState icon="sun" title="No one yet today" message="As the day begins around the world, people celebrating will appear here. Check back soon!" />
                   </Card>
                 ) : null}
                 {today.data?.items.map((person) => (
@@ -122,12 +122,12 @@ export default function GlobalBirthdays() {
                 {twins.error ? <ErrorState error={twins.error} onRetry={() => void twins.refetch()} /> : null}
                 {twins.data && twins.data.month == null ? (
                   <Card>
-                    <EmptyState emoji="📅" title="Add your birthday" message="Set your birthday in your profile to meet people who share it." />
+                    <EmptyState icon="calendar" title="Add your birthday" message="Set your birthday in your profile to meet people who share it." />
                   </Card>
                 ) : null}
                 {twins.data?.month != null && twins.data.items.length === 0 ? (
                   <Card>
-                    <EmptyState emoji="👯" title="No twins yet" message="Nobody who shares your birthday has joined global birthdays yet. Invite friends to the app!" />
+                    <EmptyState icon="users" title="No twins yet" message="Nobody who shares your birthday has joined global birthdays yet. Invite friends to the app!" />
                   </Card>
                 ) : null}
                 {twins.data && twins.data.total > 0 ? (
@@ -178,9 +178,9 @@ function CelebrantCard({ person, onCheer, cheering, twin }: { person: GlobalCele
             {person.turningAge ? ` · turning ${person.turningAge}` : ''}
           </T>
           <Row wrap style={{ marginTop: 6 }}>
-            {person.firstCelebration ? <Badge tone="gold" label="🎈 First celebration" /> : null}
-            {person.isToday ? <Badge label="🎂 Today" /> : null}
-            {person.isToday && celebrated === 0 ? <Badge tone="info" label="✨ Be the first to celebrate" /> : null}
+            {person.firstCelebration ? <Badge tone="accent" icon="sparkles" label="First celebration" /> : null}
+            {person.isToday ? <Badge icon="cake" label="Today" /> : null}
+            {person.isToday && celebrated === 0 ? <Badge tone="info" icon="star" label="Be the first to celebrate" /> : null}
           </Row>
         </View>
       </Row>
@@ -193,22 +193,22 @@ function CelebrantCard({ person, onCheer, cheering, twin }: { person: GlobalCele
 
       {person.isToday && celebrated > 0 ? (
         <T variant="caption" color={colors.textMuted} style={{ marginTop: spacing.sm }}>
-          🎉 {person.cheerCount} {person.cheerCount === 1 ? 'cheer' : 'cheers'} · 💌 {person.wishCount} {person.wishCount === 1 ? 'wish' : 'wishes'}
+          {person.cheerCount} {person.cheerCount === 1 ? 'cheer' : 'cheers'} · {person.wishCount} {person.wishCount === 1 ? 'wish' : 'wishes'}
         </T>
       ) : null}
 
       <Row gap={spacing.sm} style={{ marginTop: spacing.md }}>
         <Button
           small
-          icon={person.cheeredByMe ? '💜' : '🎉'}
+          icon={person.cheeredByMe ? 'heart' : 'party'}
           title={person.cheeredByMe ? 'Cheered' : person.isToday ? 'Cheer' : twin ? 'On the day' : 'Cheer'}
           disabled={person.cheeredByMe || !person.isToday}
           loading={cheering}
           onPress={onCheer}
           style={{ flex: 1 }}
         />
-        <Button small variant="secondary" icon="💌" title="Wish" onPress={() => router.push({ pathname: '/wish/send', params: recipient })} style={{ flex: 1 }} />
-        <Button small variant="secondary" icon="🎁" title="Gift" onPress={() => router.push({ pathname: '/digital-gift/send', params: recipient })} style={{ flex: 1 }} />
+        <Button small variant="secondary" icon="mail" title="Wish" onPress={() => router.push({ pathname: '/wish/send', params: recipient })} style={{ flex: 1 }} />
+        <Button small variant="secondary" icon="gift" title="Gift" onPress={() => router.push({ pathname: '/digital-gift/send', params: recipient })} style={{ flex: 1 }} />
       </Row>
     </Card>
   );
@@ -219,7 +219,7 @@ function MyGlobalBirthday({ status }: { status: GlobalStatusDto }) {
   const total = status.cheersReceived + status.strangerWishesReceived + status.strangerGiftsReceived;
   return (
     <Card style={{ marginTop: spacing.lg, backgroundColor: colors.goldSoft }}>
-      <T variant="heading">🎉 Happy birthday! The world sees you.</T>
+      <T variant="heading">Happy birthday! The world sees you.</T>
       <T style={{ marginTop: 4 }}>
         {total === 0
           ? 'Your card is live in the global feed. People around the world can celebrate you today.'
@@ -264,7 +264,7 @@ function JoinCard({ status }: { status: GlobalStatusDto }) {
       <Card style={{ marginTop: spacing.lg }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <View style={{ flex: 1 }}>
-            <T variant="heading">🌍 You’re part of global birthdays</T>
+            <T variant="heading">You’re part of global birthdays</T>
             <T variant="caption" color={colors.textMuted}>On your birthday, people around the world can cheer, wish and send you digital gifts.</T>
           </View>
           <Button small variant="ghost" title="Edit" onPress={() => setEditing(true)} />
@@ -276,7 +276,7 @@ function JoinCard({ status }: { status: GlobalStatusDto }) {
   const tooLong = note.length > GLOBAL_BIRTHDAYS.maxNoteLength;
   return (
     <Card style={{ marginTop: spacing.lg, borderWidth: 2, borderColor: colors.brandSoft }}>
-      <T variant="heading">🌍 Let the world celebrate you</T>
+      <T variant="heading">Let the world celebrate you</T>
       <T color={colors.textMuted} style={{ marginTop: 4, marginBottom: spacing.sm }}>
         On your birthday, you’ll appear here for people everywhere. They can cheer, send wishes and digital gifts (like airtime or wallet credit). Nobody sees your birth year, contacts or address, and only people you’re connected with can send physical gifts.
       </T>
@@ -285,7 +285,7 @@ function JoinCard({ status }: { status: GlobalStatusDto }) {
         <>
           <Field
             label="A line for people who don’t know you (optional)"
-            placeholder="Turning 30 in Kisumu! I love football and music 🎶"
+            placeholder="Turning 30 in Kisumu! I love football and music"
             value={note}
             onChangeText={setNote}
             maxLength={GLOBAL_BIRTHDAYS.maxNoteLength + 20}

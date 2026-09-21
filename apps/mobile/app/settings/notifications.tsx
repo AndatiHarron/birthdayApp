@@ -9,14 +9,14 @@ import { requestPushPermission, syncPushToken } from '../../src/lib/push';
 import { colors, spacing } from '../../src/theme';
 
 const TYPES: Array<{ type: NotificationType; label: string }> = [
-  { type: 'BIRTHDAY_REMINDER', label: '🎂 Birthday reminders' },
-  { type: 'WISHLIST_UPDATED', label: '💝 Wishlist updates' },
-  { type: 'GROUP_GIFT_CONTRIBUTION', label: '👥 Group gift contributions' },
-  { type: 'BIRTHDAY_WISH_RECEIVED', label: '💌 Birthday wishes' },
-  { type: 'FRIEND_REQUEST', label: '👫 Friend requests' },
-  { type: 'CHAT_MESSAGE', label: '💬 Chat messages' },
-  { type: 'DELIVERY_UPDATE', label: '🚚 Delivery updates' },
-  { type: 'EVENT_INVITE', label: '🎉 Event invites' },
+  { type: 'BIRTHDAY_REMINDER', label: 'Birthday reminders' },
+  { type: 'WISHLIST_UPDATED', label: 'Wishlist updates' },
+  { type: 'GROUP_GIFT_CONTRIBUTION', label: 'Group gift contributions' },
+  { type: 'BIRTHDAY_WISH_RECEIVED', label: 'Birthday wishes' },
+  { type: 'FRIEND_REQUEST', label: 'Friend requests' },
+  { type: 'CHAT_MESSAGE', label: 'Chat messages' },
+  { type: 'DELIVERY_UPDATE', label: 'Delivery updates' },
+  { type: 'EVENT_INVITE', label: 'Event invites' },
 ];
 
 /** Reminder schedule, channels, muted types and quiet hours (spec §21, §58 rule 7). */
@@ -57,7 +57,7 @@ export default function NotificationSettings() {
     <Screen>
       <Stack.Screen options={{ title: 'Reminders & notifications' }} />
       <InlineError error={save.error} />
-      <Section title="🎂 When to remind me" style={{ marginTop: 0 }}>
+      <Section icon="cake" title="When to remind me" style={{ marginTop: 0 }}>
         <T color={colors.textMuted} style={{ marginBottom: spacing.md }}>Default for everyone. You can override it per person.</T>
         <Row wrap>
           {ALLOWED_REMINDER_OFFSETS_DAYS.map((days) => (

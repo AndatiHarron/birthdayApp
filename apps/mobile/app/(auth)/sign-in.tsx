@@ -46,7 +46,7 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen>
-        <T variant="display">Welcome back 👋</T>
+        <T variant="display">Welcome back</T>
         <T color={colors.textMuted} style={{ marginTop: 6, marginBottom: spacing.xl }}>
           Sign in to see who’s celebrating soon.
         </T>

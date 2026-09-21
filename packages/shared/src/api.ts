@@ -145,6 +145,10 @@ export interface PrivacySettings {
   discoverableByUsername: boolean;
   /** Listed in global birthdays and reachable by strangers (digital only). */
   celebrateGlobally: boolean;
+  /** Link-in-bio page at /@username. */
+  publicPage: boolean;
+  /** Anyone with that link may claim and buy wishlist gifts. */
+  publicGifting: boolean;
 }
 
 export interface NotificationPreferences {

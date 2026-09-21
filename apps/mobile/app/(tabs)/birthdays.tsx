@@ -21,7 +21,7 @@ export default function Birthdays() {
   const filters = (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingVertical: spacing.sm }}>
       <Chip label="All" selected={!filter.relationship && !filter.groupId && !filter.favoritesOnly} onPress={() => setFilter({})} />
-      <Chip label="⭐ Favorites" selected={filter.favoritesOnly} onPress={() => setFilter({ favoritesOnly: true })} />
+      <Chip icon="star" label="Favorites" selected={filter.favoritesOnly} onPress={() => setFilter({ favoritesOnly: true })} />
       <Chip label="Family" selected={filter.relationship === 'FAMILY'} onPress={() => setFilter({ relationship: 'FAMILY' })} />
       <Chip label="Friends" selected={filter.relationship === 'FRIEND'} onPress={() => setFilter({ relationship: 'FRIEND' })} />
       <Chip label="Work" selected={filter.relationship === 'COLLEAGUE'} onPress={() => setFilter({ relationship: 'COLLEAGUE' })} />
@@ -36,8 +36,8 @@ export default function Birthdays() {
       <Row style={{ justifyContent: 'space-between' }}>
         <T variant="title">Birthdays</T>
         <Row>
-          <Button small variant="secondary" icon="📇" title="Import" onPress={() => router.push('/contacts-import')} />
-          <Button small icon="＋" title="Add" onPress={() => router.push('/birthday/new')} />
+          <Button small variant="secondary" icon="contacts" title="Import" onPress={() => router.push('/contacts-import')} />
+          <Button small icon="plus" title="Add" onPress={() => router.push('/birthday/new')} />
         </Row>
       </Row>
       <Row style={{ marginTop: spacing.md }}>
@@ -64,11 +64,11 @@ function UpcomingView({ filter }: { filter: Filter }) {
       {query.data?.mine ? (
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.brandSoft, borderColor: colors.brandSoft }}>
           <T variant="label" color={colors.brandDark}>
-            🎈 Your birthday: {query.data.mine.label}
+            Your birthday: {query.data.mine.label}
           </T>
         </Card>
       ) : null}
-      {all.length === 0 ? <EmptyState emoji="📅" title="No upcoming birthdays" message="Add people or import from your contacts." /> : null}
+      {all.length === 0 ? <EmptyState icon="calendar" title="No upcoming birthdays" message="Add people or import from your contacts." /> : null}
       {all.map((birthday) => (
         <BirthdayCard key={birthday.id} birthday={birthday} />
       ))}
@@ -140,7 +140,7 @@ function MonthView({ filter }: { filter: Filter }) {
                     {day.day}
                   </T>
                 </View>
-                {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.birthdays.length ? colors.pink : colors.gold, marginTop: -4 }} /> : null}
+                {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.birthdays.length ? colors.accent : colors.gold, marginTop: -4 }} /> : null}
               </Pressable>
             );
           })}
@@ -155,7 +155,7 @@ function MonthView({ filter }: { filter: Filter }) {
             ))}
             {selected.events.map((event) => (
               <Card key={event.id} onPress={() => router.push(`/event/${event.id}`)} style={{ marginBottom: spacing.md }}>
-                <T variant="heading">🎉 {event.name}</T>
+                <T variant="heading">{event.name}</T>
                 <T color={colors.textMuted}>
                   {new Date(event.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {event.venueName ? `· ${event.venueName}` : ''}
                 </T>
@@ -188,7 +188,7 @@ function ListView({ filter }: { filter: Filter }) {
 
   if (query.isLoading) return <SkeletonCard />;
   if (query.error && !query.data) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
-  if (grouped.length === 0) return <EmptyState emoji="📅" title="Your calendar is empty" />;
+  if (grouped.length === 0) return <EmptyState icon="calendar" title="Your calendar is empty" />;
   return (
     <View>
       {grouped.map(([month, birthdays]) => (

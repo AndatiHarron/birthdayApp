@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Confetti } from '../../src/components/Confetti';
-import { Button, T } from '../../src/components/ui';
+import { Button, IconTile, T } from '../../src/components/ui';
 import { colors, gradients, spacing } from '../../src/theme';
 
 /** Onboarding screen 1 (spec §4). */
@@ -13,7 +13,7 @@ export default function Welcome() {
       <Confetti count={24} />
       <SafeAreaView style={{ flex: 1, padding: spacing.xl, justifyContent: 'space-between' }}>
         <View style={{ marginTop: spacing.xxl * 2, gap: spacing.md }}>
-          <T style={{ fontSize: 64 }}>🎂</T>
+          <IconTile name="cake" size={72} tone="onDark" />
           <T variant="display" color={colors.white} style={{ fontSize: 40, lineHeight: 46 }}>
             Celebrate the people who matter.
           </T>

@@ -56,6 +56,8 @@ export const privacySettingsSchema = z.object({
   discoverableByPhone: z.boolean().optional(),
   discoverableByEmail: z.boolean().optional(),
   discoverableByUsername: z.boolean().optional(),
+  publicPage: z.boolean().optional(),
+  publicGifting: z.boolean().optional(),
 });
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 

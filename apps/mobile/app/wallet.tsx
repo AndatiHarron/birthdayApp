@@ -66,7 +66,7 @@ export default function Wallet() {
 
       {!user?.isPremium && premium.data && !pending ? (
         <Card style={{ marginTop: spacing.xl, backgroundColor: colors.goldSoft, borderColor: colors.goldSoft }}>
-          <T variant="heading">✨ Premium</T>
+          <T variant="heading">Premium</T>
           <T color={colors.textMuted} style={{ marginVertical: spacing.sm }}>
             More AI gift ideas, more wishlists, premium cards and animations, larger group gifts.
           </T>

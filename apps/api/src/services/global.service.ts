@@ -116,10 +116,22 @@ export async function assertCanReach(senderId: string, recipientId: string, kind
   return { fromStranger: true };
 }
 
-/** Physical gifts (orders, reservations, group gifts) go only to people you are connected with. */
+/**
+ * Physical gifts (orders, reservations, group gifts) go only to people you are
+ * connected with — unless they published a link-in-bio page and switched on
+ * gifting from it, which is an explicit invitation to anyone holding the link.
+ */
 export async function assertKnownForPhysicalGift(senderId: string, recipientId: string): Promise<void> {
   if (senderId === recipientId) return;
-  if (!(await areFriends(senderId, recipientId))) throw new AppError('PHYSICAL_GIFT_REQUIRES_CONNECTION');
+  if (await areFriends(senderId, recipientId)) return;
+  if (await acceptsGiftsFromAnyone(recipientId)) return;
+  throw new AppError('PHYSICAL_GIFT_REQUIRES_CONNECTION');
+}
+
+/** True when this person invites gifts from anyone with their public link. */
+export async function acceptsGiftsFromAnyone(userId: string): Promise<boolean> {
+  const privacy = await prisma.privacySetting.findUnique({ where: { userId }, select: { publicPage: true, publicGifting: true } });
+  return Boolean(privacy?.publicPage && privacy.publicGifting);
 }
 
 /* -------------------------------- settings -------------------------------- */

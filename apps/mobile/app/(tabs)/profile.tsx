@@ -2,41 +2,42 @@ import type { CurrentUser } from '@bday/shared';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Alert, Pressable, View } from 'react-native';
-import { Avatar, Badge, Card, Divider, Row, Screen, T } from '../../src/components/ui';
+import { Avatar, Badge, Card, Divider, Icon, type IconName, IconTile, Row, Screen, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { unregisterPushToken } from '../../src/lib/push';
 import { colors, spacing } from '../../src/theme';
 
-const LINKS: Array<{ section: string; items: Array<{ emoji: string; label: string; href: string }> }> = [
+const LINKS: Array<{ section: string; items: Array<{ icon: IconName; label: string; href: string }> }> = [
   {
     section: 'Celebrate',
     items: [
-      { emoji: '👥', label: 'Friends & requests', href: '/friends' },
-      { emoji: '🎉', label: 'Events', href: '/events' },
-      { emoji: '🤫', label: 'Surprises & group gifts', href: '/surprises' },
-      { emoji: '💬', label: 'Chats', href: '/chats' },
-      { emoji: '💌', label: 'Wishes I received', href: '/celebration' },
+      { icon: 'users', label: 'Friends & requests', href: '/friends' },
+      { icon: 'party', label: 'Events', href: '/events' },
+      { icon: 'secret', label: 'Surprises & group gifts', href: '/surprises' },
+      { icon: 'chat', label: 'Chats', href: '/chats' },
+      { icon: 'mail', label: 'Wishes I received', href: '/celebration' },
     ],
   },
   {
     section: 'Gifts',
     items: [
-      { emoji: '🎁', label: 'Gifts I’m giving', href: '/reservations' },
-      { emoji: '📜', label: 'Gift history', href: '/gift-history' },
-      { emoji: '📸', label: 'Birthday memories', href: '/memories' },
-      { emoji: '📦', label: 'Orders', href: '/orders' },
-      { emoji: '👛', label: 'Wallet & payments', href: '/wallet' },
+      { icon: 'gift', label: 'Gifts I’m giving', href: '/reservations' },
+      { icon: 'receipt', label: 'Gift history', href: '/gift-history' },
+      { icon: 'camera', label: 'Birthday memories', href: '/memories' },
+      { icon: 'package', label: 'Orders', href: '/orders' },
+      { icon: 'wallet', label: 'Wallet & payments', href: '/wallet' },
     ],
   },
   {
     section: 'Account',
     items: [
-      { emoji: '✏️', label: 'Edit profile & interests', href: '/settings/profile' },
-      { emoji: '🔔', label: 'Reminders & notifications', href: '/settings/notifications' },
-      { emoji: '🔒', label: 'Privacy', href: '/settings/privacy' },
-      { emoji: '🏪', label: 'Sell on the marketplace', href: '/vendor' },
-      { emoji: '⚙️', label: 'Account & data', href: '/settings/account' },
+      { icon: 'link', label: 'My birthday page (link in bio)', href: '/settings/public-page' },
+      { icon: 'edit', label: 'Edit profile & interests', href: '/settings/profile' },
+      { icon: 'bell', label: 'Reminders & notifications', href: '/settings/notifications' },
+      { icon: 'lock', label: 'Privacy', href: '/settings/privacy' },
+      { icon: 'store', label: 'Sell on the marketplace', href: '/vendor' },
+      { icon: 'settings', label: 'Account & data', href: '/settings/account' },
     ],
   },
 ];
@@ -56,14 +57,14 @@ export default function Profile() {
               <T variant="title">{user.displayName}</T>
               <T color={colors.textMuted}>@{user.username}</T>
               <Row style={{ marginTop: 6 }} wrap>
-                {user.isPremium ? <Badge label="✨ Premium" tone="gold" /> : null}
-                {user.birthday ? <Badge label={`🎂 ${user.birthday.label}`} /> : null}
+                {user.isPremium ? <Badge icon="crown" label="Premium" tone="gold" /> : null}
+                {user.birthday ? <Badge icon="cake" label={user.birthday.label} /> : null}
               </Row>
             </View>
           </Row>
           {user.birthday ? (
-            <T variant="label" color={colors.pink} style={{ marginTop: spacing.md }}>
-              {user.birthday.countdown.isToday ? '🎉 It’s your birthday today!' : `Your birthday: ${user.birthday.countdown.label}`}
+            <T variant="label" color={colors.accent} style={{ marginTop: spacing.md }}>
+              {user.birthday.countdown.isToday ? 'It’s your birthday today!' : `Your birthday: ${user.birthday.countdown.label}`}
             </T>
           ) : null}
           <Pressable onPress={() => router.push(`/person/${user.id}`)} style={{ marginTop: spacing.sm }}>
@@ -85,9 +86,9 @@ export default function Profile() {
                 {index > 0 ? <Divider /> : null}
                 <Pressable onPress={() => router.push(item.href as never)} style={{ paddingVertical: spacing.sm }}>
                   <Row gap={spacing.md}>
-                    <T style={{ fontSize: 20 }}>{item.emoji}</T>
+                    <IconTile name={item.icon} size={34} tone="muted" />
                     <T style={{ flex: 1 }}>{item.label}</T>
-                    <T color={colors.textFaint}>›</T>
+                    <Icon name="chevronRight" size={18} color={colors.textFaint} />
                   </Row>
                 </Pressable>
               </View>

@@ -24,7 +24,7 @@ export default function AcceptInvite() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['friends'] });
       void queryClient.invalidateQueries({ queryKey: ['birthdays'] });
-      Alert.alert('🎉 Connected!');
+      Alert.alert('Connected!');
       router.replace('/(tabs)');
     },
     onError: (error) => Alert.alert('Invite not accepted', errorMessage(error)),
@@ -38,12 +38,12 @@ export default function AcceptInvite() {
     <Screen>
       <Stack.Screen options={{ title: 'Invitation' }} />
       {invite.expired || invite.alreadyAccepted ? (
-        <EmptyState emoji="⌛" title={invite.alreadyAccepted ? 'This invite was already used' : 'This invite has expired'} />
+        <EmptyState icon="hourglass" title={invite.alreadyAccepted ? 'This invite was already used' : 'This invite has expired'} />
       ) : (
         <>
           {invite.inviter ? <Avatar name={invite.inviter.displayName} uri={invite.inviter.avatarUrl} size={88} /> : null}
           <T variant="title" style={{ marginTop: spacing.lg }}>
-            {invite.inviter?.displayName ?? 'A friend'} wants to celebrate your birthday 🎂
+            {invite.inviter?.displayName ?? 'A friend'} wants to celebrate your birthday
           </T>
           <T color={colors.textMuted} style={{ marginVertical: spacing.md }}>Connect to share birthdays, wishlists and surprises.</T>
           {status === 'signed-in' ? (

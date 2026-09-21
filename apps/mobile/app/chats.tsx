@@ -20,7 +20,7 @@ export default function Chats() {
         contentContainerStyle={{ padding: spacing.lg }}
         refreshing={conversations.isRefetching}
         onRefresh={() => void conversations.refetch()}
-        ListEmptyComponent={!conversations.isLoading ? <EmptyState emoji="💬" title="No chats yet" message="Surprise planning groups, event chats and friend chats appear here." /> : null}
+        ListEmptyComponent={!conversations.isLoading ? <EmptyState icon="chat" title="No chats yet" message="Surprise planning groups, event chats and friend chats appear here." /> : null}
         renderItem={({ item }) => (
           <Card onPress={() => router.push(`/chat/${item.id}`)} style={{ marginBottom: spacing.sm }}>
             <Row gap={spacing.md}>
@@ -28,13 +28,13 @@ export default function Chats() {
               <View style={{ flex: 1 }}>
                 <Row style={{ justifyContent: 'space-between' }}>
                   <T variant="label" numberOfLines={1} style={{ flex: 1 }}>
-                    {item.type === 'SURPRISE_GROUP' ? '🤫 ' : item.type === 'EVENT' ? '🎉 ' : ''}
+                    {item.type === 'SURPRISE_GROUP' ? '' : item.type === 'EVENT' ? '' : ''}
                     {item.title ?? 'Chat'}
                   </T>
                   {item.unreadCount > 0 ? <Badge label={String(item.unreadCount)} tone="danger" /> : null}
                 </Row>
                 <T color={colors.textMuted} numberOfLines={1}>
-                  {item.lastMessage ? `${item.lastMessage.sender?.displayName ? `${item.lastMessage.sender.displayName}: ` : ''}${item.lastMessage.body ?? (item.lastMessage.kind === 'VOICE' ? '🎤 Voice note' : item.lastMessage.kind === 'IMAGE' ? '📷 Photo' : '')}` : `${item.memberCount} members`}
+                  {item.lastMessage ? `${item.lastMessage.sender?.displayName ? `${item.lastMessage.sender.displayName}: ` : ''}${item.lastMessage.body ?? (item.lastMessage.kind === 'VOICE' ? 'Voice note' : item.lastMessage.kind === 'IMAGE' ? 'Photo' : '')}` : `${item.memberCount} members`}
                 </T>
               </View>
             </Row>

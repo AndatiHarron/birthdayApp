@@ -2,8 +2,8 @@ import type { FriendDto, FriendRequestDto, PublicProfile } from '@bday/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, TextInput, View } from 'react-native';
-import { Avatar, Badge, Button, Card, Chip, EmptyState, Loading, Row, Screen, Section, T } from '../src/components/ui';
+import { Alert, Pressable, TextInput, View } from 'react-native';
+import { Avatar, Badge, Button, Card, Chip, EmptyState, Icon, Loading, Row, Screen, Section, T } from '../src/components/ui';
 import { api, errorMessage } from '../src/lib/api';
 import { colors, radius, spacing } from '../src/theme';
 
@@ -44,13 +44,13 @@ export default function Friends() {
       <Row wrap style={{ marginBottom: spacing.lg }}>
         <Chip label={`Friends (${friends.data?.length ?? 0})`} selected={tab === 'friends'} onPress={() => setTab('friends')} />
         <Chip label={`Requests${requestCount ? ` (${requestCount})` : ''}`} selected={tab === 'requests'} onPress={() => setTab('requests')} />
-        <Chip label="🔍 Find people" selected={tab === 'find'} onPress={() => setTab('find')} />
+        <Chip icon="search" label="Find people" selected={tab === 'find'} onPress={() => setTab('find')} />
       </Row>
 
       {tab === 'friends' ? (
         <>
           {friends.isLoading ? <Loading /> : null}
-          {friends.data?.length === 0 ? <EmptyState emoji="👫" title="No friends yet" action={<Button title="Find people" onPress={() => setTab('find')} />} /> : null}
+          {friends.data?.length === 0 ? <EmptyState icon="users" title="No friends yet" action={<Button title="Find people" onPress={() => setTab('find')} />} /> : null}
           {friends.data?.map((friend) => (
             <Card key={friend.friendshipId} onPress={() => router.push(`/person/${friend.user.id}`)} style={{ marginBottom: spacing.sm }}>
               <Row gap={spacing.md}>
@@ -58,14 +58,16 @@ export default function Friends() {
                 <View style={{ flex: 1 }}>
                   <T variant="label">{friend.user.displayName}</T>
                   <T variant="caption" color={colors.textMuted}>
-                    {friend.user.birthday ? `🎂 ${friend.user.birthday.label} · ${friend.user.birthday.countdown.label}` : `@${friend.user.username}`}
+                    {friend.user.birthday ? `${friend.user.birthday.label} · ${friend.user.birthday.countdown.label}` : `@${friend.user.username}`}
                   </T>
                   <Row wrap style={{ marginTop: 4 }}>
                     {friend.relationship ? <Badge label={friend.relationship.replace('_', ' ').toLowerCase()} tone="muted" /> : null}
                     {friend.groups.map((group) => <Badge key={group.id} label={group.name} tone="info" />)}
                   </Row>
                 </View>
-                <Button small variant="ghost" title={friend.isFavorite ? '★' : '☆'} onPress={() => favorite.mutate({ userId: friend.user.id, isFavorite: !friend.isFavorite })} />
+                <Pressable accessibilityLabel="Favourite" onPress={() => favorite.mutate({ userId: friend.user.id, isFavorite: !friend.isFavorite })} style={{ padding: spacing.sm }}>
+                  <Icon name="star" size={20} color={friend.isFavorite ? colors.gold : colors.textFaint} fill={friend.isFavorite ? colors.gold : 'none'} />
+                </Pressable>
                 <Button
                   small
                   variant="ghost"
@@ -129,8 +131,8 @@ export default function Friends() {
             style={{ minHeight: 48, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, color: colors.text, marginBottom: spacing.md }}
           />
           <Row wrap style={{ marginBottom: spacing.md }}>
-            <Button small variant="secondary" icon="📨" title="Invite by link or QR" onPress={() => router.push('/invite')} />
-            <Button small variant="secondary" icon="📇" title="From contacts" onPress={() => router.push('/contacts-import')} />
+            <Button small variant="secondary" icon="send" title="Invite by link or QR" onPress={() => router.push('/invite')} />
+            <Button small variant="secondary" icon="contacts" title="From contacts" onPress={() => router.push('/contacts-import')} />
           </Row>
           {results.isFetching ? <Loading /> : null}
           {results.data?.length === 0 ? <T color={colors.textMuted}>No one found. Try inviting them instead.</T> : null}

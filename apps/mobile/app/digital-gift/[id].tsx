@@ -6,10 +6,11 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Alert } from 'react-native';
 import { Confetti } from '../../src/components/Confetti';
 import { money } from '../../src/components/gifting';
-import { Button, ErrorState, Loading, Screen, T } from '../../src/components/ui';
+import { Button, ErrorState, IconTile, Loading, Screen, T } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { colors, gradients, radius, spacing } from '../../src/theme';
+import { DIGITAL_GIFT_ICONS } from '../../src/lib/icons';
 
 /** Unwrapping a digital gift: "🎉 You received a gift from John!" (spec §16). */
 export default function DigitalGiftDetail() {
@@ -35,21 +36,21 @@ export default function DigitalGiftDetail() {
       <Stack.Screen options={{ title: meta.label }} />
       {opened ? <Confetti count={20} loop={false} /> : null}
       <LinearGradient colors={gradients.celebration} style={{ borderRadius: radius.xl, padding: spacing.xl, alignItems: 'center', minHeight: 320, justifyContent: 'center' }}>
-        <T style={{ fontSize: 80 }}>{opened ? meta.emoji : '🎁'}</T>
+        <IconTile name={opened ? DIGITAL_GIFT_ICONS[data.type] : 'gift'} size={96} tone="onDark" />
         <T variant="title" color={colors.white} center style={{ marginTop: spacing.md }}>
           {isRecipient ? `You received a gift${data.sender ? ` from ${data.sender.displayName}` : ''}!` : `${meta.label} for them`}
         </T>
         {opened && data.message ? <T color={colors.white} center style={{ marginTop: spacing.md, fontSize: 17 }}>“{data.message}”</T> : null}
         {opened && data.valueMinor ? <T variant="display" color={colors.white} style={{ marginTop: spacing.md }}>{money(data.valueMinor, data.currency ?? 'KES')}</T> : null}
-        {!opened ? <Button title="Unwrap 🎉" loading={open.isPending} onPress={() => open.mutate()} style={{ marginTop: spacing.xl, backgroundColor: colors.white, borderRadius: radius.pill }} /> : null}
+        {!opened ? <Button title="Unwrap" loading={open.isPending} onPress={() => open.mutate()} style={{ marginTop: spacing.xl, backgroundColor: colors.white, borderRadius: radius.pill }} /> : null}
       </LinearGradient>
       {opened && data.redemptionCode ? (
-        <Button variant="secondary" icon="📋" title={`Code: ${data.redemptionCode}`} onPress={() => void Clipboard.setStringAsync(data.redemptionCode!).then(() => Alert.alert('Code copied'))} style={{ marginTop: spacing.lg }} />
+        <Button variant="secondary" icon="list" title={`Code: ${data.redemptionCode}`} onPress={() => void Clipboard.setStringAsync(data.redemptionCode!).then(() => Alert.alert('Code copied'))} style={{ marginTop: spacing.lg }} />
       ) : null}
       {isRecipient && opened ? (
-        <Button icon="❤️" title="Send a thank you" onPress={() => router.push({ pathname: '/thank-you', params: { giftType: 'DIGITAL_GIFT', giftId: data.id, name: data.sender?.displayName ?? '' } })} style={{ marginTop: spacing.lg }} />
+        <Button icon="heart" title="Send a thank you" onPress={() => router.push({ pathname: '/thank-you', params: { giftType: 'DIGITAL_GIFT', giftId: data.id, name: data.sender?.displayName ?? '' } })} style={{ marginTop: spacing.lg }} />
       ) : null}
-      {!isRecipient ? <T color={colors.textMuted} center style={{ marginTop: spacing.lg }}>{data.deliveredAt ? `Delivered ${new Date(data.deliveredAt).toLocaleString()}${data.openedAt ? ' · opened 💜' : ''}` : `Scheduled for ${data.deliverAt ? new Date(data.deliverAt).toLocaleString() : 'soon'}`}</T> : null}
+      {!isRecipient ? <T color={colors.textMuted} center style={{ marginTop: spacing.lg }}>{data.deliveredAt ? `Delivered ${new Date(data.deliveredAt).toLocaleString()}${data.openedAt ? ' · opened' : ''}` : `Scheduled for ${data.deliverAt ? new Date(data.deliverAt).toLocaleString() : 'soon'}`}</T> : null}
     </Screen>
   );
 }

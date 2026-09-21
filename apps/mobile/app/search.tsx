@@ -38,7 +38,7 @@ export default function Search() {
       />
       {results.isFetching ? <Loading /> : null}
       {results.error ? <ErrorState error={results.error} /> : null}
-      {empty ? <EmptyState emoji="🔍" title="No results" message="Try a name, @username, phone number or gift." /> : null}
+      {empty ? <EmptyState icon="search" title="No results" message="Try a name, @username, phone number or gift." /> : null}
       {data?.people.length ? (
         <Section title="People">
           {data.people.map((person) => (
@@ -67,7 +67,7 @@ export default function Search() {
         <Section title="Wishlists">
           {data.wishlists.map((wishlist) => (
             <Card key={wishlist.id} onPress={() => router.push(`/wishlist-share/${wishlist.shareSlug}`)} style={{ marginBottom: spacing.sm }}>
-              <T variant="label">💝 {wishlist.title}</T>
+              <T variant="label">{wishlist.title}</T>
               <T color={colors.textMuted}>by {wishlist.owner}</T>
             </Card>
           ))}
@@ -77,7 +77,7 @@ export default function Search() {
         <Section title="Events">
           {data.events.map((event) => (
             <Card key={event.id} onPress={() => router.push(`/event/${event.id}`)} style={{ marginBottom: spacing.sm }}>
-              <T variant="label">🎉 {event.name}</T>
+              <T variant="label">{event.name}</T>
               <T color={colors.textMuted}>{new Date(event.startsAt).toLocaleString()}</T>
             </Card>
           ))}
@@ -87,8 +87,8 @@ export default function Search() {
         <Section title="Shops">
           {data.vendors.map((vendor) => (
             <Card key={vendor.id} style={{ marginBottom: spacing.sm }}>
-              <T variant="label">🏪 {vendor.name}</T>
-              <T color={colors.textMuted}>{[vendor.area, vendor.city].filter(Boolean).join(', ')}{vendor.rating ? ` · ⭐ ${vendor.rating.toFixed(1)}` : ''}</T>
+              <T variant="label">{vendor.name}</T>
+              <T color={colors.textMuted}>{[vendor.area, vendor.city].filter(Boolean).join(', ')}{vendor.rating ? ` · ${vendor.rating.toFixed(1)}` : ''}</T>
             </Card>
           ))}
         </Section>

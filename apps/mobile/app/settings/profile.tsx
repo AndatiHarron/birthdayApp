@@ -9,6 +9,7 @@ import { api, fieldError } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { pickAndUploadImage } from '../../src/lib/media';
 import { colors, spacing } from '../../src/theme';
+import { interestIcon } from '../../src/lib/icons';
 
 const list = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
 
@@ -107,7 +108,7 @@ export default function EditProfile() {
       <Section title="Interests">
         <Row wrap>
           {INTEREST_CATALOG.map((interest) => (
-            <Chip key={interest.slug} label={interest.label} emoji={interest.emoji} selected={interests.includes(interest.slug)} onPress={() => setInterests(interests.includes(interest.slug) ? interests.filter((slug) => slug !== interest.slug) : [...interests, interest.slug])} />
+            <Chip key={interest.slug} label={interest.label} icon={interestIcon(interest.slug)} selected={interests.includes(interest.slug)} onPress={() => setInterests(interests.includes(interest.slug) ? interests.filter((slug) => slug !== interest.slug) : [...interests, interest.slug])} />
           ))}
         </Row>
       </Section>

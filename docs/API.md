@@ -94,6 +94,7 @@ Rendered by the API for sharing, with no login needed:
 
 | Path | Page |
 |---|---|
+| `/@username` | Link-in-bio page: profile, birthday countdown and wishlist, with link-preview tags. Only when the owner published it. **Never shows reservation data, contacts, birth year or address** |
 | `/wishlist/:slug` | Shared wishlist. **Never shows reservation data** |
 | `/rsvp/:token` | Guest RSVP without an account |
 | `/invite/:code` | Invitation landing page |

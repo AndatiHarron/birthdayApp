@@ -8,11 +8,12 @@ import { Button, Card, Chip, Field, InlineError, Row, Screen, Section, T } from 
 import { api, fieldError } from '../../src/lib/api';
 import { pickAndUploadImage } from '../../src/lib/media';
 import { colors, radius, spacing } from '../../src/theme';
+import { PRIORITY_ICONS } from '../../src/lib/icons';
 
 const PRIORITIES: Array<{ value: WishlistItemPriority; label: string }> = [
-  { value: 'MUST_HAVE', label: '❤️ Must have' },
-  { value: 'HIGH', label: '⭐ High' },
-  { value: 'NICE_TO_HAVE', label: '🙂 Nice to have' },
+  { value: 'MUST_HAVE', label: 'Must have' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'NICE_TO_HAVE', label: 'Nice to have' },
 ];
 
 /** Add or edit a wish — manually or by pasting a product link (spec §11). */
@@ -99,7 +100,7 @@ export default function WishlistItemForm() {
       {!itemId ? (
         <Card style={{ backgroundColor: colors.brandSoft, borderColor: colors.brandSoft, marginBottom: spacing.lg }}>
           <T variant="heading" color={colors.brandDark}>
-            🔗 Paste a product link
+            Paste a product link
           </T>
           <T color={colors.brandDark} style={{ marginBottom: spacing.md }}>
             We’ll fill in the name, photo and price for you.
@@ -112,7 +113,7 @@ export default function WishlistItemForm() {
 
       <InlineError error={save.error} />
       <Pressable onPress={() => void pickAndUploadImage('wishlist').then((url) => url && setImageUrl(url))} style={{ height: 180, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg }}>
-        {imageUrl ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.textMuted}>📷 Add a photo</T>}
+        {imageUrl ? <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.textMuted}>Add a photo</T>}
       </Pressable>
 
       <Field label="What would you like?" value={name} onChangeText={setName} error={fieldError(save.error, 'name')} />
@@ -133,7 +134,7 @@ export default function WishlistItemForm() {
       <Section title="Priority" style={{ marginTop: spacing.sm }}>
         <Row wrap>
           {PRIORITIES.map((option) => (
-            <Chip key={option.value} label={option.label} selected={priority === option.value} onPress={() => setPriority(option.value)} />
+            <Chip key={option.value} icon={PRIORITY_ICONS[option.value]} label={option.label} selected={priority === option.value} onPress={() => setPriority(option.value)} />
           ))}
         </Row>
       </Section>
@@ -150,7 +151,7 @@ export default function WishlistItemForm() {
         <Field label="Description" multiline value={description} onChangeText={setDescription} />
         <Field label="Shop / preferred vendor" value={merchant} onChangeText={setMerchant} />
         <Field label="Product link" autoCapitalize="none" keyboardType="url" value={productUrl} onChangeText={setProductUrl} error={fieldError(save.error, 'productUrl')} />
-        <Field label="Notes for gifters" multiline value={notes} onChangeText={setNotes} placeholder="The 128GB version, please 🙏" />
+        <Field label="Notes for gifters" multiline value={notes} onChangeText={setNotes} placeholder="The 128GB version, please" />
       </Section>
 
       <Button title={itemId ? 'Save changes' : 'Add to wishlist'} loading={save.isPending} disabled={!name.trim()} onPress={() => save.mutate()} style={{ marginTop: spacing.lg }} />

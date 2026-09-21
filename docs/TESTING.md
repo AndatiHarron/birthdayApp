@@ -84,6 +84,14 @@ You need three accounts. All must have a **full date of birth, including the yea
 - [ ] User C, who hasn't opted in: A can't wish or gift C. A minor account can't join or even see the feed.
 - [ ] **Birthday twins** tab: people who share your birthday and opted in.
 
+### 8c. Link-in-bio page
+- [ ] **Profile → My birthday page** → turn on *Publish my page*. Copy the link and open it in a browser (signed out, or in a private window).
+- [ ] The page shows your photo, name, city, bio, countdown and wishlist — and **no** phone, email, age or address.
+- [ ] Turn on *Anyone with my link can gift me*. A user who is not your friend can now claim a wishlist item; with it off they get *"Physical gifts are only for people you are connected with"*.
+- [ ] A claimed item shows as **Claimed** on the page, and **never says who claimed it**, including to you.
+- [ ] Buying from the link ships to your saved delivery address, and the buyer's order screen shows no address. Without a saved address, the buyer is told to send a digital gift instead.
+- [ ] Paste the link into WhatsApp or X: the preview shows your name and countdown.
+
 ### 9. Admin dashboard
 - [ ] Dashboard stats, users (search, suspend), orders (status, refund), payments (reconciliation), reports, broadcast notification, audit log.
 

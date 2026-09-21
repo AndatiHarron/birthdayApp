@@ -5,11 +5,12 @@ import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { PaymentMethodPicker, PaymentStatusBanner, usePaymentStatus } from '../../src/components/Payment';
 import { money } from '../../src/components/gifting';
-import { Button, Card, Chip, EmptyState, Field, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
+import { Button, Card, Chip, EmptyState, Field, IconTile, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api, idempotencyKey } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { useRecipient } from '../../src/lib/recipient';
 import { colors, radius, spacing } from '../../src/theme';
+import { DIGITAL_GIFT_ICONS } from '../../src/lib/icons';
 
 /** Instant or scheduled digital gifts (spec §16, §18). */
 export default function SendDigitalGift() {
@@ -50,7 +51,7 @@ export default function SendDigitalGift() {
   });
 
   if (isLoading || catalog.isLoading) return <Loading />;
-  if (!recipient?.userId) return <EmptyState emoji="📨" title="They need the app to receive digital gifts" />;
+  if (!recipient?.userId) return <EmptyState icon="send" title="They need the app to receive digital gifts" />;
 
   const done = sent && (!sent.payment || status.payment?.status === 'SUCCESSFUL');
 
@@ -58,20 +59,20 @@ export default function SendDigitalGift() {
     <Screen>
       <Stack.Screen options={{ title: 'Digital gift' }} />
       {done ? (
-        <EmptyState emoji="🎉" title={scheduleDays ? 'Scheduled!' : 'Gift sent!'} message={scheduleDays ? `It will arrive in ${scheduleDays} days.` : `${recipient.name.split(' ')[0]} just got a surprise.`} action={<Button title="Done" onPress={() => router.back()} />} />
+        <EmptyState icon="party" title={scheduleDays ? 'Scheduled!' : 'Gift sent!'} message={scheduleDays ? `It will arrive in ${scheduleDays} days.` : `${recipient.name.split(' ')[0]} just got a surprise.`} action={<Button title="Done" onPress={() => router.back()} />} />
       ) : sent?.payment && status.payment ? (
         <PaymentStatusBanner payment={status.payment} timedOut={status.timedOut} onRetryCheck={() => void status.check()} successText="Paid" />
       ) : (
         <>
-          <T variant="title">For {recipient.name.split(' ')[0]} 🎁</T>
+          <T variant="title">For {recipient.name.split(' ')[0]}</T>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg }}>
             {catalog.data?.map((entry) => (
               <Pressable key={entry.type} onPress={() => setType(entry.type)} style={{ width: '30%', padding: spacing.md, borderRadius: radius.lg, alignItems: 'center', backgroundColor: type === entry.type ? colors.brandSoft : colors.surface, borderWidth: 1, borderColor: type === entry.type ? colors.brand : colors.border }}>
-                <T style={{ fontSize: 32 }}>{entry.emoji}</T>
+                <IconTile name={DIGITAL_GIFT_ICONS[entry.type]} size={40} />
                 <T variant="caption" center>
                   {entry.label}
                 </T>
-                {entry.isPremium ? <T variant="caption" color={colors.gold}>✨ Premium</T> : null}
+                {entry.isPremium ? <T variant="caption" color={colors.gold}>Premium</T> : null}
               </Pressable>
             ))}
           </View>
@@ -86,7 +87,7 @@ export default function SendDigitalGift() {
               <Field label="Amount (KES)" keyboardType="decimal-pad" value={value} onChangeText={setValue} />
             </Section>
           ) : null}
-          <Field label="Message" multiline value={message} onChangeText={setMessage} placeholder="Happy birthday! 🎉" style={{ marginTop: spacing.lg }} />
+          <Field label="Message" multiline value={message} onChangeText={setMessage} placeholder="Happy birthday!" style={{ marginTop: spacing.lg }} />
           <T variant="label" color={colors.textMuted} style={{ marginBottom: 6 }}>
             When
           </T>

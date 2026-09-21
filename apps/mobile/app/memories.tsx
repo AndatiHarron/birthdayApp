@@ -36,11 +36,11 @@ export default function Memories() {
   return (
     <Screen refreshing={memories.isRefetching} onRefresh={() => void memories.refetch()}>
       <Stack.Screen options={{ title: 'Birthday memories' }} />
-      {!composing ? <Button icon="📸" title="Save a memory" onPress={() => setComposing(true)} style={{ marginBottom: spacing.lg }} /> : (
+      {!composing ? <Button icon="camera" title="Save a memory" onPress={() => setComposing(true)} style={{ marginBottom: spacing.lg }} /> : (
         <Card style={{ marginBottom: spacing.lg }}>
           <InlineError error={save.error} />
           <Field label="Year" keyboardType="number-pad" value={year} onChangeText={setYear} />
-          <Field label="Title" value={title} onChangeText={setTitle} placeholder="My 30th in Diani 🌴" />
+          <Field label="Title" value={title} onChangeText={setTitle} placeholder="My 30th in Diani" />
           <Field label="Note" multiline value={note} onChangeText={setNote} />
           <ScrollView horizontal contentContainerStyle={{ gap: spacing.sm, marginBottom: spacing.md }}>
             {photos.map((url) => <Image key={url} source={{ uri: url }} style={{ width: 80, height: 80, borderRadius: radius.md }} />)}
@@ -56,12 +56,12 @@ export default function Memories() {
       )}
       {memories.isLoading ? <Loading /> : null}
       {memories.error ? <ErrorState error={memories.error} /> : null}
-      {memories.data?.length === 0 ? <EmptyState emoji="📸" title="No memories yet" message="After your birthday, save photos, wishes and gifts here." /> : null}
+      {memories.data?.length === 0 ? <EmptyState icon="camera" title="No memories yet" message="After your birthday, save photos, wishes and gifts here." /> : null}
       {memories.data?.map((memory) => (
         <Card key={memory.id} style={{ marginBottom: spacing.md }}>
           <T variant="title">{memory.celebrationYear}</T>
           {memory.title ? <T variant="heading">{memory.title}</T> : null}
-          <T color={colors.textMuted}>🎁 {memory.giftCount} gifts · 💌 {memory.wishCount} wishes · 📸 {memory.media.length} photos</T>
+          <T color={colors.textMuted}>{memory.giftCount} gifts · {memory.wishCount} wishes · {memory.media.length} photos</T>
           {memory.note ? <T style={{ marginTop: spacing.sm }}>{memory.note}</T> : null}
           {memory.media.length ? (
             <ScrollView horizontal contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.md }}>

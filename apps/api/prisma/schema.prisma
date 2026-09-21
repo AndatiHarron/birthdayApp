@@ -508,6 +508,12 @@ model PrivacySetting {
   discoverableByEmail    Boolean @default(true)
   discoverableByUsername Boolean @default(true)
 
+  /// Link-in-bio page at /@username: profile, countdown and wishlist, open to anyone.
+  publicPage    Boolean @default(false)
+  /// Anyone with that link may claim and buy wishlist gifts. Deliveries go to
+  /// the owner's saved address, which the buyer never sees.
+  publicGifting Boolean @default(false)
+
   /// Global birthdays opt-in: listed in "celebrating today" and birthday twins,
   /// and reachable by strangers with wishes, cheers and digital gifts (never
   /// physical ones). Adults only; off by default.
@@ -1533,6 +1539,10 @@ model Order {
   deliveryTarget DeliveryTarget @default(RECIPIENT)
   giftMessage    String?
   isAnonymous    Boolean        @default(false)
+
+  /// Address came from the recipient's own saved address (public-page gifting),
+  /// so it is withheld from the buyer.
+  addressFromRecipient Boolean @default(false)
 
   scheduledDate   DateTime?
   scheduledWindow DeliveryWindow?

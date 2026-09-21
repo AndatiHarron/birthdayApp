@@ -4,7 +4,7 @@ import * as Contacts from 'expo-contacts';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Button, Card, InlineError, Row, Screen, T } from '../../src/components/ui';
+import { Button, Card, type IconName, IconTile, InlineError, Row, Screen, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { requestPushPermission, syncPushToken } from '../../src/lib/push';
@@ -13,10 +13,10 @@ import { onboardingDraft } from '../../src/lib/onboardingDraft';
 
 type PermissionKey = 'notifications' | 'contacts' | 'calendar';
 
-const EXPLANATIONS: Record<PermissionKey, { emoji: string; title: string; body: string }> = {
-  notifications: { emoji: '🔔', title: 'Birthday reminders', body: 'A heads-up 30, 14 and 7 days before — and on the morning itself. You choose the schedule.' },
-  contacts: { emoji: '📇', title: 'Find birthdays in contacts', body: 'Import birthdays you already have. Nothing is uploaded until you pick who to add.' },
-  calendar: { emoji: '📅', title: 'Add to your calendar', body: 'Put birthdays and party invites in your phone’s calendar.' },
+const EXPLANATIONS: Record<PermissionKey, { icon: IconName; title: string; body: string }> = {
+  notifications: { icon: 'bell' as IconName, title: 'Birthday reminders', body: 'A heads-up 30, 14 and 7 days before — and on the morning itself. You choose the schedule.' },
+  contacts: { icon: 'contacts' as IconName, title: 'Find birthdays in contacts', body: 'Import birthdays you already have. Nothing is uploaded until you pick who to add.' },
+  calendar: { icon: 'calendar' as IconName, title: 'Add to your calendar', body: 'Put birthdays and party invites in your phone’s calendar.' },
 };
 
 /** Onboarding screen 4 (spec §4): every permission optional and explained. */
@@ -65,7 +65,7 @@ export default function OnboardingPermissions() {
         STEP 3 OF 3
       </T>
       <T variant="display" style={{ marginVertical: spacing.sm }}>
-        Never miss a moment ✨
+        Never miss a moment
       </T>
       <T color={colors.textMuted} style={{ marginBottom: spacing.xl }}>
         All optional. You can change these any time in Settings.
@@ -74,7 +74,7 @@ export default function OnboardingPermissions() {
       {(Object.keys(EXPLANATIONS) as PermissionKey[]).map((key) => (
         <Card key={key} style={{ marginBottom: spacing.md }}>
           <Row gap={spacing.md} style={{ alignItems: 'flex-start' }}>
-            <T style={{ fontSize: 28 }}>{EXPLANATIONS[key].emoji}</T>
+            <IconTile name={EXPLANATIONS[key].icon} size={40} />
             <View style={{ flex: 1 }}>
               <T variant="heading">{EXPLANATIONS[key].title}</T>
               <T color={colors.textMuted} style={{ marginVertical: 4 }}>

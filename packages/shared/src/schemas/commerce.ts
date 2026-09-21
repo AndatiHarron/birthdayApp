@@ -120,6 +120,8 @@ export const createOrderSchema = z
     trackedBirthdayId: idSchema.optional(),
     /** Saved address, or a one-off address supplied inline. */
     deliveryAddressId: idSchema.optional(),
+    /** Public-page gifting: ship to the recipient's saved address, never shown to the buyer. */
+    useRecipientAddress: z.boolean().default(false),
     deliveryAddress: deliveryAddressSchema.omit({ isDefault: true, label: true }).optional(),
     scheduledDate: civilDateSchema.optional(),
     scheduledWindow: z.enum(['MORNING', 'AFTERNOON', 'EVENING']).optional(),
@@ -133,6 +135,7 @@ export const createOrderSchema = z
   .refine(
     (value) =>
       value.deliveryTarget === DeliveryTarget.SENDER ||
+      value.useRecipientAddress ||
       value.deliveryAddressId != null ||
       value.deliveryAddress != null,
     { message: 'Add a delivery address', path: ['deliveryAddress'] },

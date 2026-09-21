@@ -81,9 +81,19 @@ async function assertCanView(
         discoverableByPhone: true,
         discoverableByEmail: true,
         discoverableByUsername: true,
+        publicPage: true,
+        publicGifting: true,
       },
     }),
   );
+
+  // A published link-in-bio page is meant to be read by anyone holding the
+  // link, so the list is readable here too — they can already see it on the
+  // page. Claiming a gift is separate, and still needs `publicGifting`.
+  // Who reserved what stays hidden either way; `ItemViewerContext` governs that.
+  if (privacy.publicPage && wishlist.visibility !== 'PRIVATE') {
+    return { viewerId, isOwner: false };
+  }
 
   // Stricter of the two wins.
   const effective =

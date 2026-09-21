@@ -30,7 +30,7 @@ export default function SharedWishlist() {
         {status === 'signed-in' && !isOwner ? <Button title="Open profile to reserve gifts" onPress={() => router.replace(`/person/${data.ownerId}`)} style={{ marginTop: spacing.md }} /> : null}
         {status !== 'signed-in' ? <Button title="Join to reserve a gift" onPress={() => router.replace('/(auth)/sign-up')} style={{ marginTop: spacing.md }} /> : null}
       </Card>
-      {data.items.length === 0 ? <EmptyState emoji="🎈" title="Nothing on the list yet" /> : null}
+      {data.items.length === 0 ? <EmptyState icon="party" title="Nothing on the list yet" /> : null}
       {data.items.map((item) => (
         <WishlistItemRow key={item.id} item={item} isOwner={isOwner} />
       ))}

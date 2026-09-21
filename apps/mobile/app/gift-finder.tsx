@@ -10,13 +10,13 @@ import { useRecipient } from '../src/lib/recipient';
 import { colors, radius, spacing } from '../src/theme';
 
 const REFINEMENT_LABELS: Record<GiftRefinement, string> = {
-  CHEAPER: '💸 Show cheaper',
-  PREMIUM: '💎 Show premium',
-  ROMANTIC: '❤️ Something romantic',
-  FUNNY: '😂 Something funny',
-  UNEXPECTED: '🤯 Something unexpected',
-  MORE_LIKE_THIS: '➕ More like these',
-  SURPRISE_ME: '🎲 Surprise me',
+  CHEAPER: 'Show cheaper',
+  PREMIUM: 'Show premium',
+  ROMANTIC: 'Something romantic',
+  FUNNY: 'Something funny',
+  UNEXPECTED: 'Something unexpected',
+  MORE_LIKE_THIS: 'More like these',
+  SURPRISE_ME: 'Surprise me',
 };
 
 interface Turn {
@@ -69,7 +69,7 @@ export default function GiftFinder() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <Stack.Screen options={{ title: '✨ Smart gift finder' }} />
+      <Stack.Screen options={{ title: 'Smart gift finder' }} />
       <ScrollView ref={scroll} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
         {recipient ? (
           <Row gap={spacing.md} style={{ marginBottom: spacing.lg }}>
@@ -111,10 +111,10 @@ export default function GiftFinder() {
                   <T color={colors.textMuted} style={{ marginTop: 4 }}>
                     {suggestion.reason}
                   </T>
-                  {suggestion.wishlistItemId ? <T variant="caption" color={colors.pink}>💝 It’s on their wishlist</T> : null}
+                  {suggestion.wishlistItemId ? <T variant="caption" color={colors.accent}>It’s on their wishlist</T> : null}
                   {suggestion.product ? (
                     <T variant="caption" color={colors.success} style={{ marginTop: 4 }}>
-                      🛍️ Available from {suggestion.product.vendor.name} — tap to buy
+                      Available from {suggestion.product.vendor.name} — tap to buy
                     </T>
                   ) : null}
                 </Card>

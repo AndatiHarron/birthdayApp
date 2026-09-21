@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Linking, Platform, Pressable } from 'react-native';
-import { Button, Chip, Field, InlineError, Row, Screen, T } from '../../src/components/ui';
+import { Button, Chip, Field, Icon, InlineError, Row, Screen, T } from '../../src/components/ui';
 import { fieldError } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { WEB_URL } from '../../src/lib/config';
@@ -46,7 +46,7 @@ export default function SignUp() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen>
-        <T variant="display">Let’s get started 🎉</T>
+        <T variant="display">Let’s get started</T>
         <T color={colors.textMuted} style={{ marginTop: 6, marginBottom: spacing.xl }}>
           Create your account in under a minute.
         </T>
@@ -65,7 +65,7 @@ export default function SignUp() {
           <Field label="Phone number" keyboardType="phone-pad" autoComplete="tel" value={phone} onChangeText={setPhone} hint="International format, e.g. +254712345678" error={fieldError(error, 'phone')} />
         )}
         <Pressable onPress={() => setAccepted(!accepted)} style={{ flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.md, alignItems: 'center' }} accessibilityRole="checkbox" accessibilityState={{ checked: accepted }}>
-          <T style={{ fontSize: 20 }}>{accepted ? '☑️' : '⬜'}</T>
+          <Icon name={accepted ? 'checkbox' : 'checkboxEmpty'} size={22} color={accepted ? colors.brand : colors.textFaint} />
           <T color={colors.textMuted} style={{ flex: 1 }}>
             I agree to the{' '}
             <T variant="label" color={colors.brand} style={{ textDecorationLine: 'underline' }}>

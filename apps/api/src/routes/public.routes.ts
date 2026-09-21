@@ -6,6 +6,7 @@ import { AppError, isAppError } from '../lib/errors';
 import { optionalAuth } from '../middleware/auth';
 import { previewInvite } from '../services/birthday.service';
 import { getEventByInviteToken, rsvpByInviteToken } from '../services/event.service';
+import { getPublicPage, type PublicPage } from '../services/publicPage.service';
 import { getWishlistBySlug } from '../services/wishlist.service';
 
 /**
@@ -55,6 +56,130 @@ function failure(res: Response, error: unknown): void {
 }
 
 const appLink = (path: string) => `${env.APP_DEEP_LINK_SCHEME}://${path}`;
+
+
+/* ------------------------- link-in-bio page (/@name) ------------------------ */
+
+/**
+ * The page people put in an Instagram or TikTok bio. It is the app's shop
+ * window, so it is styled properly and carries link-preview tags — and it
+ * shows strictly less than the app: no contacts, no birth year, no reservation
+ * details, and no address even when gifting is open to everyone.
+ */
+function renderPublicPage(res: Response, data: PublicPage): void {
+  const money = (minor: number | null, currency: string): string =>
+    minor != null && isSupportedCurrency(currency) ? formatMoney(minor, currency) : '';
+  const initials = data.displayName
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const countdown = data.countdown
+    ? data.countdown.isToday
+      ? 'Birthday is today'
+      : `Birthday in ${data.countdown.daysUntil} ${data.countdown.daysUntil === 1 ? 'day' : 'days'}`
+    : null;
+
+  const items = (data.wishlist?.items ?? [])
+    .map((item) => {
+      const price = money(item.priceMinor, item.currency);
+      const details = [item.size ? `Size ${item.size}` : '', item.color ?? ''].filter(Boolean).join(' · ');
+      return `<li class="item${item.claimed ? ' claimed' : ''}">
+${item.imageUrl ? `<img src="${escape(item.imageUrl)}" alt="" loading="lazy">` : '<div class="ph"></div>'}
+<div class="item-body"><strong>${escape(item.name)}</strong>
+${details ? `<p class="muted">${escape(details)}</p>` : ''}
+${item.notes ? `<p class="muted">${escape(item.notes)}</p>` : ''}
+<div class="item-foot">${price ? `<span class="price">${escape(price)}</span>` : '<span></span>'}
+${item.claimed ? '<span class="tag">Claimed</span>' : data.giftingOpen ? `<a class="btn small" href="${escape(appLink(`wishlist-share/${data.wishlist!.shareSlug}`))}">Gift this</a>` : ''}</div>
+</div></li>`;
+    })
+    .join('');
+
+  const title = `${data.displayName} (@${data.username})`;
+  const description = data.countdown
+    ? `${countdown}. ${data.giftingOpen ? 'Pick something from the wishlist.' : 'See the wishlist.'}`
+    : `${data.displayName}'s birthday wishlist.`;
+  const openInApp = appLink(`person/${data.username}`);
+
+  res
+    .setHeader('content-type', 'text/html; charset=utf-8')
+    .setHeader('content-security-policy', "default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'")
+    .setHeader('referrer-policy', 'no-referrer')
+    .send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escape(title)}</title>
+<meta name="description" content="${escape(description)}">
+<meta property="og:type" content="profile"><meta property="og:title" content="${escape(title)}">
+<meta property="og:description" content="${escape(description)}">
+<meta property="og:url" content="${escape(`${env.WEB_BASE_URL}/@${data.username}`)}">
+${data.avatarUrl ? `<meta property="og:image" content="${escape(data.avatarUrl)}">` : ''}
+<meta name="twitter:card" content="${data.avatarUrl ? 'summary_large_image' : 'summary'}">
+<style>
+:root{--ink:#101828;--muted:#5b6475;--faint:#98a2b3;--brand:#4f46e5;--accent:#ea580c;--border:#e3e6eb;--bg:#f6f7f9;--surface:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+.hero{background:linear-gradient(135deg,#111827,#312e81 55%,#4338ca);color:#fff;padding:48px 16px 72px;text-align:center}
+.avatar{width:104px;height:104px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.65);background:#312e81;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700}
+h1{margin:0;font-size:26px;letter-spacing:-.3px}
+.handle{opacity:.82;margin:2px 0 0}
+.bio{margin:12px auto 0;max-width:460px;opacity:.94}
+.pill{display:inline-block;margin-top:16px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.16);font-weight:600;font-size:14px}
+.pill.today{background:var(--accent)}
+.wrap{max-width:620px;margin:-44px auto 0;padding:0 16px 56px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:0 8px 28px rgba(16,24,40,.07)}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.item{display:flex;gap:14px;border:1px solid var(--border);border-radius:14px;padding:12px;align-items:stretch}
+.item.claimed{opacity:.55}
+.item img,.item .ph{width:76px;height:76px;border-radius:10px;object-fit:cover;background:#f0f2f5;flex:0 0 auto}
+.item-body{display:flex;flex-direction:column;justify-content:space-between;flex:1;min-width:0}
+.item-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.muted{color:var(--muted);margin:2px 0;font-size:14px}
+.price{font-weight:700;color:var(--brand)}
+.tag{font-size:12px;font-weight:700;color:var(--muted);background:#f0f2f5;padding:5px 10px;border-radius:999px}
+.btn{display:inline-block;background:var(--brand);color:#fff;padding:13px 22px;border-radius:999px;font-weight:600;text-decoration:none;text-align:center}
+.btn.small{padding:8px 14px;font-size:14px}
+.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--border)}
+.actions{display:grid;gap:10px;margin-top:16px}
+footer{text-align:center;color:var(--faint);font-size:13px;padding:0 16px 40px}
+footer a{color:var(--brand);text-decoration:none;font-weight:600}
+</style></head>
+<body>
+<div class="hero">
+${data.avatarUrl ? `<img class="avatar" src="${escape(data.avatarUrl)}" alt="">` : `<div class="avatar">${escape(initials)}</div>`}
+<h1>${escape(data.displayName)}</h1>
+<p class="handle">@${escape(data.username)}${data.city ? ` · ${escape(data.city)}` : ''}</p>
+${data.bio ? `<p class="bio">${escape(data.bio)}</p>` : ''}
+${countdown ? `<p><span class="pill${data.countdown!.isToday ? ' today' : ''}">${escape(countdown)}</span></p>` : ''}
+</div>
+<main class="wrap"><div class="card">
+${
+  data.wishlist && items
+    ? `<h2>${escape(data.wishlist.title)}</h2><ul>${items}</ul>`
+    : '<h2>Wishlist</h2><p class="muted">Nothing on the list yet — check back soon.</p>'
+}
+<div class="actions">
+<a class="btn" href="${escape(openInApp)}">${data.giftingOpen ? 'Gift something' : 'Open in the app'}</a>
+${data.acceptsWishes ? `<a class="btn ghost" href="${escape(appLink(`wish/send?username=${data.username}`))}">Send a birthday wish</a>` : ''}
+</div>
+</div></main>
+<footer><p>Claim a gift or send a wish in the app.<br><a href="${escape(env.WEB_BASE_URL)}">Make your own birthday page</a></p></footer>
+</body></html>`);
+}
+
+publicRouter.get(
+  '/@:username',
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      renderPublicPage(res, await getPublicPage(String(req.params.username)));
+    } catch (error) {
+      failure(res, error);
+    }
+  }),
+);
 
 publicRouter.get(
   '/wishlist/:slug',

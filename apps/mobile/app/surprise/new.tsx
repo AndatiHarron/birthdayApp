@@ -29,20 +29,20 @@ export default function NewSurprise() {
   });
 
   if (isLoading) return <Loading />;
-  if (!recipient) return <EmptyState emoji="🤫" title="Choose who the surprise is for" message="Open someone’s birthday and tap “Plan a surprise”." />;
+  if (!recipient) return <EmptyState icon="secret" title="Choose who the surprise is for" message="Open someone’s birthday and tap “Plan a surprise”." />;
 
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Plan a surprise' }} />
-      <Card style={{ backgroundColor: colors.pinkSoft, borderColor: colors.pinkSoft }}>
+      <Card style={{ backgroundColor: colors.accentSoft, borderColor: colors.accentSoft }}>
         <Row gap={spacing.md}>
           <Avatar name={recipient.name} uri={recipient.avatarUrl} />
           <T variant="heading" style={{ flex: 1 }}>
-            🎁 {recipient.name}’s birthday surprise
+            {recipient.name}’s birthday surprise
           </T>
         </Row>
         <T color={colors.textMuted} style={{ marginTop: spacing.sm }}>
-          🤫 {recipient.name.split(' ')[0]} won’t be added, won’t get notifications, and can’t see the planning.
+          {recipient.name.split(' ')[0]} won’t be added, won’t get notifications, and can’t see the planning.
         </T>
       </Card>
       <InlineError error={create.error} />
@@ -51,7 +51,7 @@ export default function NewSurprise() {
       <Section title="Who’s in on it?">
         <FriendPicker selected={members} onChange={setMembers} excludeIds={recipient.userId ? [recipient.userId] : []} />
       </Section>
-      <Button title="Create private group" icon="🤫" loading={create.isPending} onPress={() => create.mutate()} style={{ marginTop: spacing.xl }} />
+      <Button title="Create private group" icon="secret" loading={create.isPending} onPress={() => create.mutate()} style={{ marginTop: spacing.xl }} />
     </Screen>
   );
 }

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
-import { Button, Field, InlineError, Row, Screen, T } from '../src/components/ui';
+import { Button, Field, Icon, InlineError, Row, Screen, T } from '../src/components/ui';
 import { api } from '../src/lib/api';
 import { colors, spacing } from '../src/theme';
 
@@ -31,7 +31,7 @@ export default function Review() {
       <Row style={{ marginVertical: spacing.md }}>
         {[1, 2, 3, 4, 5].map((value) => (
           <Pressable key={value} onPress={() => setRating(value)} accessibilityLabel={`${value} stars`}>
-            <T style={{ fontSize: 36, opacity: value <= rating ? 1 : 0.25 }}>⭐</T>
+            <Icon name="star" size={36} color={value <= rating ? colors.gold : colors.border} fill={value <= rating ? colors.gold : 'none'} />
           </Pressable>
         ))}
       </Row>

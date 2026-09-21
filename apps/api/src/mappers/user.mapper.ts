@@ -95,6 +95,8 @@ export function toPrivacyDto(privacy: PrivacySetting | null): PrivacySettings {
     discoverableByEmail: value.discoverableByEmail,
     discoverableByUsername: value.discoverableByUsername,
     celebrateGlobally: value.celebrateGlobally ?? false,
+    publicPage: value.publicPage ?? false,
+    publicGifting: value.publicGifting ?? false,
   };
 }
 

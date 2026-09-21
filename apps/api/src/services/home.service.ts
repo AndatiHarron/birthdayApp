@@ -257,7 +257,7 @@ export async function getHomeFeed(userId: string): Promise<HomeFeedResponse> {
   );
 
   return {
-    greeting: `${greetingFor(hour)}, ${(user.profile?.displayName ?? user.username).split(' ')[0]} 👋`,
+    greeting: `${greetingFor(hour)}, ${(user.profile?.displayName ?? user.username).split(' ')[0]}`,
     user: { id: user.id, displayName: user.profile?.displayName ?? user.username, avatarUrl: user.profile?.avatarUrl ?? null },
     myBirthdayToday: myToday,
     upcomingBirthdays: upcoming,

@@ -25,7 +25,7 @@ export default function Verify() {
 
   return (
     <Screen>
-      <T variant="display">Enter your code 🔐</T>
+      <T variant="display">Enter your code</T>
       <T color={colors.textMuted} style={{ marginTop: 6, marginBottom: spacing.xl }}>
         We sent a 6-digit code to {params.destination}.
       </T>

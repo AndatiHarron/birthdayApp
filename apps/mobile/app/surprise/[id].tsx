@@ -40,14 +40,14 @@ export default function SurpriseDetail() {
         <Row gap={spacing.md}>
           <Avatar name={data.beneficiary.name} uri={data.beneficiary.avatarUrl} size={52} />
           <Row style={{ flex: 1 }} wrap>
-            <T variant="heading">🎁 {data.title}</T>
-            {data.revealedAt ? <Badge label="Revealed" tone="success" /> : <Badge label="🤫 Secret" tone="gold" />}
+            <T variant="heading">{data.title}</T>
+            {data.revealedAt ? <Badge label="Revealed" tone="success" /> : <Badge icon="secret" label="Secret" tone="gold" />}
           </Row>
         </Row>
         <T color={colors.textMuted} style={{ marginTop: spacing.sm }}>
           {data.memberCount} planners{data.budgetMinor ? ` · budget ${money(data.budgetMinor, data.currency)}` : ''}
         </T>
-        <Button icon="💬" title="Open planning chat" onPress={() => router.push(`/chat/${data.conversationId}`)} style={{ marginTop: spacing.md }} />
+        <Button icon="chat" title="Open planning chat" onPress={() => router.push(`/chat/${data.conversationId}`)} style={{ marginTop: spacing.md }} />
       </Card>
 
       <Section title="The gift">
@@ -64,7 +64,7 @@ export default function SurpriseDetail() {
             <T color={colors.textMuted}>Choose a gift and collect contributions from the group.</T>
             <Row wrap style={{ marginTop: spacing.md }}>
               <Button small title="Start group gift" onPress={() => router.push({ pathname: '/group-gift/new', params: { surpriseId: data.id, beneficiaryUserId: data.beneficiary.id ?? '', name: data.beneficiary.name, target: data.budgetMinor ? String(data.budgetMinor) : '' } })} />
-              <Button small variant="secondary" title="✨ Ideas" onPress={() => router.push({ pathname: '/gift-finder', params: { userId: data.beneficiary.id ?? '', name: data.beneficiary.name } })} />
+              <Button small variant="secondary" icon="sparkles" title="Ideas" onPress={() => router.push({ pathname: '/gift-finder', params: { userId: data.beneficiary.id ?? '', name: data.beneficiary.name } })} />
               {data.beneficiary.id ? <Button small variant="secondary" title="Their wishlist" onPress={() => router.push(`/person/${data.beneficiary.id}`)} /> : null}
             </Row>
           </Card>

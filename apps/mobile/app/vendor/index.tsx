@@ -30,7 +30,7 @@ function Apply() {
   const set = (key: keyof typeof form) => (value: string) => setForm({ ...form, [key]: value });
   return (
     <View>
-      <T variant="title">🏪 Open your gift shop</T>
+      <T variant="title">Open your gift shop</T>
       <T color={colors.textMuted} style={{ marginVertical: spacing.md }}>
         Cake shops, florists, gift shops and experience providers can sell to people planning birthdays. We review every shop before it goes live.
       </T>
@@ -52,7 +52,7 @@ function Apply() {
 function PendingApproval({ vendor }: { vendor: VendorDto }) {
   return (
     <EmptyState
-      emoji={vendor.status === 'PENDING' ? '⏳' : '⚠️'}
+      icon={vendor.status === 'PENDING' ? 'hourglass' : 'alert'}
       title={vendor.status === 'PENDING' ? `${vendor.name} is under review` : `${vendor.name} is ${vendor.status.toLowerCase()}`}
       message={vendor.status === 'PENDING' ? 'We’ll notify you as soon as your shop is approved.' : 'Contact support if you think this is a mistake.'}
     />
@@ -77,14 +77,14 @@ function Dashboard({ vendor }: { vendor: VendorDto }) {
         <T color={colors.textMuted}>{[vendor.area, vendor.city].filter(Boolean).join(', ')} · commission {(vendor.commissionBps / 100).toFixed(1)}%</T>
       </Card>
       <Row style={{ marginVertical: spacing.lg }}>
-        <Chip label={`📦 Orders (${orders.data?.items.length ?? 0})`} selected={tab === 'orders'} onPress={() => setTab('orders')} />
-        <Chip label={`🎁 Products (${products.data?.length ?? 0})`} selected={tab === 'products'} onPress={() => setTab('products')} />
+        <Chip icon="package" label={`Orders (${orders.data?.items.length ?? 0})`} selected={tab === 'orders'} onPress={() => setTab('orders')} />
+        <Chip icon="gift" label={`Products (${products.data?.length ?? 0})`} selected={tab === 'products'} onPress={() => setTab('products')} />
       </Row>
 
       {tab === 'orders' ? (
         <>
           {orders.isLoading ? <Loading /> : null}
-          {orders.data?.items.length === 0 ? <EmptyState emoji="📦" title="No paid orders yet" /> : null}
+          {orders.data?.items.length === 0 ? <EmptyState icon="package" title="No paid orders yet" /> : null}
           {orders.data?.items.map((order) => {
             const next = order.delivery ? allowedDeliveryTransitions(order.delivery.status).filter((status) => !['CANCELLED', 'RETURNED'].includes(status)) : [];
             return (
@@ -102,8 +102,8 @@ function Dashboard({ vendor }: { vendor: VendorDto }) {
                     {order.delivery.scheduledDate ? ` · ${order.delivery.scheduledDate} ${order.delivery.scheduledWindow?.toLowerCase() ?? ''}` : ''}
                   </T>
                 ) : null}
-                {order.delivery?.instructions ? <T variant="caption" color={colors.textMuted}>📝 {order.delivery.instructions}</T> : null}
-                {order.giftMessage ? <T variant="caption">💌 Card: “{order.giftMessage}”</T> : null}
+                {order.delivery?.instructions ? <T variant="caption" color={colors.textMuted}>{order.delivery.instructions}</T> : null}
+                {order.giftMessage ? <T variant="caption">Card: “{order.giftMessage}”</T> : null}
                 <Row wrap style={{ marginTop: spacing.md }}>
                   {next.map((status) => (
                     <Button key={status} small variant={status === 'FAILED' ? 'danger' : 'primary'} title={DELIVERY_STATUS_LABELS[status]} loading={advance.isPending} onPress={() => advance.mutate({ orderId: order.id, status })} />
@@ -115,7 +115,7 @@ function Dashboard({ vendor }: { vendor: VendorDto }) {
         </>
       ) : (
         <>
-          <Button icon="＋" title="Add product" onPress={() => router.push('/vendor/product')} style={{ marginBottom: spacing.lg }} />
+          <Button icon="plus" title="Add product" onPress={() => router.push('/vendor/product')} style={{ marginBottom: spacing.lg }} />
           {products.data?.map((product) => (
             <Card key={product.id} onPress={() => router.push({ pathname: '/vendor/product', params: { id: product.id } })} style={{ marginBottom: spacing.sm }}>
               <Row style={{ justifyContent: 'space-between' }}>

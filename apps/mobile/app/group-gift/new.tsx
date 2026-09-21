@@ -44,7 +44,7 @@ export default function NewGroupGift() {
       <Stack.Screen options={{ title: 'Group gift' }} />
       <Card style={{ backgroundColor: colors.brandSoft, borderColor: colors.brandSoft, marginBottom: spacing.lg }}>
         <T variant="heading" color={colors.brandDark}>
-          👥 For {params.name ?? 'the birthday person'}
+          For {params.name ?? 'the birthday person'}
         </T>
         <T color={colors.brandDark}>They won’t see who contributed until you reveal the gift.</T>
       </Card>

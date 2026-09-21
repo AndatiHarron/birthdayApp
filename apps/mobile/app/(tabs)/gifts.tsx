@@ -8,6 +8,7 @@ import { ProductCard } from '../../src/components/gifting';
 import { Button, Chip, EmptyState, ErrorState, Row, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { colors, radius, spacing } from '../../src/theme';
+import { shelfIcon } from '../../src/lib/icons';
 
 /** Gift discovery (spec §46): shelves, search, filters and the AI finder. */
 export default function Gifts() {
@@ -50,12 +51,12 @@ export default function Gifts() {
             <Row style={{ justifyContent: 'space-between' }}>
               <T variant="title">Gifts</T>
               <Row>
-                <Button small variant="secondary" icon="📦" title="Orders" onPress={() => router.push('/orders')} />
+                <Button small variant="secondary" icon="package" title="Orders" onPress={() => router.push('/orders')} />
               </Row>
             </Row>
             <Pressable onPress={() => router.push('/gift-finder')} style={{ marginTop: spacing.md, backgroundColor: colors.brandSoft, borderRadius: radius.lg, padding: spacing.lg }}>
               <T variant="heading" color={colors.brandDark}>
-                ✨ Smart gift finder
+                Smart gift finder
               </T>
               <T color={colors.brandDark}>“A gift for my brother, 28, loves gaming, KES 7,000” — ask in your own words.</T>
             </Pressable>
@@ -71,7 +72,7 @@ export default function Gifts() {
             {!search ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingVertical: spacing.md }}>
                 {GIFT_SHELVES.map((item) => (
-                  <Chip key={item.key} label={item.key.startsWith('under') ? `KES ${item.label}` : item.label} emoji={item.emoji} selected={shelf === item.key} onPress={() => setShelf(item.key)} />
+                  <Chip key={item.key} label={item.key.startsWith('under') ? `KES ${item.label}` : item.label} icon={shelfIcon(item.key)} selected={shelf === item.key} onPress={() => setShelf(item.key)} />
                 ))}
               </ScrollView>
             ) : (
@@ -87,13 +88,13 @@ export default function Gifts() {
                 <Chip key={option} label={{ RELEVANCE: 'Best match', PRICE_ASC: 'Price ↑', PRICE_DESC: 'Price ↓', RATING: 'Top rated' }[option]} selected={sort === option} onPress={() => setSort(option)} />
               ))}
               {['Nairobi', 'Westlands', 'Kilimani', 'Mombasa'].map((place) => (
-                <Chip key={place} label={`📍 ${place}`} selected={city === place} onPress={() => setCity(city === place ? '' : place)} />
+                <Chip key={place} icon="mapPin" label={place} selected={city === place} onPress={() => setCity(city === place ? '' : place)} />
               ))}
             </ScrollView>
             {products.error && items.length === 0 ? <ErrorState error={products.error} onRetry={() => void products.refetch()} /> : null}
             {products.isLoading ? <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} /> : null}
             {!products.isLoading && items.length === 0 && !products.error ? (
-              <EmptyState emoji="🛍️" title="No gifts here yet" message="Try another shelf, or ask the smart gift finder." />
+              <EmptyState icon="bag" title="No gifts here yet" message="Try another shelf, or ask the smart gift finder." />
             ) : null}
           </View>
         }

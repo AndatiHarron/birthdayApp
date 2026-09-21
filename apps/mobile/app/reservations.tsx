@@ -30,7 +30,7 @@ export default function Reservations() {
       <Stack.Screen options={{ title: 'Gifts I’m giving' }} />
       {list.isLoading ? <Loading /> : null}
       {list.error ? <ErrorState error={list.error} /> : null}
-      {list.data?.length === 0 ? <EmptyState emoji="🎁" title="No reserved gifts" message="Tap “I’ll get this” on a friend’s wishlist." /> : null}
+      {list.data?.length === 0 ? <EmptyState icon="gift" title="No reserved gifts" message="Tap “I’ll get this” on a friend’s wishlist." /> : null}
       {list.data?.map((reservation) => (
         <Card key={reservation.id} style={{ marginBottom: spacing.md }}>
           <Row style={{ justifyContent: 'space-between' }}>

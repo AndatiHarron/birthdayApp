@@ -20,11 +20,11 @@ export default function Events() {
       </Row>
       {events.isLoading ? <Loading /> : null}
       {events.error ? <ErrorState error={events.error} /> : null}
-      {events.data?.length === 0 ? <EmptyState emoji="🎉" title="No events" message="Throw a birthday party and invite friends." action={<Button title="Create event" onPress={() => router.push('/event/new')} />} /> : null}
+      {events.data?.length === 0 ? <EmptyState icon="party" title="No events" message="Throw a birthday party and invite friends." action={<Button title="Create event" onPress={() => router.push('/event/new')} />} /> : null}
       {events.data?.map((event) => (
         <Card key={event.id} onPress={() => router.push(`/event/${event.id}`)} style={{ marginBottom: spacing.md }}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <T variant="heading" style={{ flex: 1 }}>🎉 {event.name}</T>
+            <T variant="heading" style={{ flex: 1 }}>{event.name}</T>
             {event.myRsvp ? <Badge label={event.myRsvp.toLowerCase()} tone={event.myRsvp === 'GOING' ? 'success' : 'muted'} /> : <Badge label="Host" />}
           </Row>
           <T color={colors.textMuted}>

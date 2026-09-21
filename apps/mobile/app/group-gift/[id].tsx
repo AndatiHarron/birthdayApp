@@ -54,7 +54,7 @@ export default function GroupGift() {
   });
   const invite = useMutation({ mutationFn: () => api.post(`/gifts/group/${id}/invite`, { userIds: inviting }), onSuccess: () => { setInviting([]); refresh(); Alert.alert('Invites sent'); }, onError: (error) => Alert.alert('Error', errorMessage(error)) });
   const purchased = useMutation({ mutationFn: () => api.post(`/gifts/group/${id}/purchased`), onSuccess: refresh, onError: (error) => Alert.alert('Error', errorMessage(error)) });
-  const reveal = useMutation({ mutationFn: () => api.post(`/gifts/group/${id}/reveal`, { message: revealMessage || null, revealContributors: true }), onSuccess: () => { refresh(); Alert.alert('🎉 Revealed!', 'The birthday person can now see the gift and who chipped in.'); }, onError: (error) => Alert.alert('Error', errorMessage(error)) });
+  const reveal = useMutation({ mutationFn: () => api.post(`/gifts/group/${id}/reveal`, { message: revealMessage || null, revealContributors: true }), onSuccess: () => { refresh(); Alert.alert('Revealed!', 'The birthday person can now see the gift and who chipped in.'); }, onError: (error) => Alert.alert('Error', errorMessage(error)) });
 
   if (gift.isLoading) return <Loading />;
   if (!gift.data) return <ErrorState error={gift.error} onRetry={() => void gift.refetch()} />;
@@ -68,7 +68,7 @@ export default function GroupGift() {
       <Stack.Screen options={{ title: data.title }} />
       <Card>
         <T variant="caption" color={colors.brand}>
-          🎁 {isBeneficiary ? 'A GIFT FOR YOU' : `FOR ${data.beneficiary.name.toUpperCase()}`}
+          {isBeneficiary ? 'A GIFT FOR YOU' : `FOR ${data.beneficiary.name.toUpperCase()}`}
         </T>
         <T variant="title" style={{ marginVertical: 4 }}>
           {data.title}
@@ -87,7 +87,7 @@ export default function GroupGift() {
           <Badge label={data.status.toLowerCase()} tone={data.status === 'FUNDED' ? 'success' : 'brand'} />
         </Row>
         {data.deadline ? <T variant="caption" color={colors.textMuted}>Closes {new Date(data.deadline).toLocaleDateString()}</T> : null}
-        {data.conversationId && !isBeneficiary ? <Button small variant="secondary" icon="💬" title="Planning chat" onPress={() => router.push(`/chat/${data.conversationId}`)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} /> : null}
+        {data.conversationId && !isBeneficiary ? <Button small variant="secondary" icon="chat" title="Planning chat" onPress={() => router.push(`/chat/${data.conversationId}`)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} /> : null}
       </Card>
 
       {status.payment ? <PaymentStatusBanner payment={status.payment} timedOut={status.timedOut} onRetryCheck={() => void status.check().then(refresh)} successText="Thank you! Your contribution is in." /> : null}
@@ -114,7 +114,7 @@ export default function GroupGift() {
         <Section title="Contributors">
           {data.contributions.map((contribution: ContributionDto) => (
             <Row key={contribution.id} gap={spacing.md} style={{ paddingVertical: spacing.sm }}>
-              <Avatar name={contribution.contributor?.displayName ?? '🤫'} uri={contribution.contributor?.avatarUrl} size={36} />
+              <Avatar name={contribution.contributor?.displayName ?? ''} uri={contribution.contributor?.avatarUrl} size={36} />
               <View style={{ flex: 1 }}>
                 <T>{contribution.contributor?.displayName ?? 'Anonymous'}</T>
                 {contribution.message ? <T variant="caption" color={colors.textMuted}>“{contribution.message}”</T> : null}
@@ -144,8 +144,8 @@ export default function GroupGift() {
           </Row>
           {data.status !== 'REVEALED' && data.status !== 'CANCELLED' ? (
             <View style={{ marginTop: spacing.md }}>
-              <Field label="Reveal message" value={revealMessage} onChangeText={setRevealMessage} placeholder="Happy birthday from all of us! 🎉" />
-              <Button title="🎉 Reveal the surprise" loading={reveal.isPending} onPress={() => Alert.alert('Reveal now?', `${data.beneficiary.name} will be told about the gift and who contributed.`, [{ text: 'Not yet', style: 'cancel' }, { text: 'Reveal', onPress: () => reveal.mutate() }])} />
+              <Field label="Reveal message" value={revealMessage} onChangeText={setRevealMessage} placeholder="Happy birthday from all of us!" />
+              <Button icon="party" title="Reveal the surprise" loading={reveal.isPending} onPress={() => Alert.alert('Reveal now?', `${data.beneficiary.name} will be told about the gift and who contributed.`, [{ text: 'Not yet', style: 'cancel' }, { text: 'Reveal', onPress: () => reveal.mutate() }])} />
             </View>
           ) : null}
         </Section>

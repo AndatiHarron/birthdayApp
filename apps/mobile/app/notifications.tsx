@@ -8,6 +8,9 @@ import { api } from '../src/lib/api';
 import { routeForDeepLink } from '../src/lib/push';
 import { colors, spacing } from '../src/theme';
 
+/** Notification copy is written with an emoji for push; the in-app list is plain. */
+const stripLeadingEmoji = (text: string | null): string | null => text?.replace(/^\s*(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*\s*)+/u, '') ?? null;
+
 /** In-app notification inbox (spec §28) — the source of truth behind every push. */
 export default function Notifications() {
   const queryClient = useQueryClient();
@@ -40,7 +43,7 @@ export default function Notifications() {
         refreshing={list.isRefetching}
         onRefresh={() => void list.refetch()}
         onEndReached={() => list.hasNextPage && void list.fetchNextPage()}
-        ListEmptyComponent={!list.isLoading ? <EmptyState emoji="🔔" title="You’re all caught up" /> : null}
+        ListEmptyComponent={!list.isLoading ? <EmptyState icon="bell" title="You’re all caught up" /> : null}
         renderItem={({ item }) => (
           <Pressable
             onPress={() => {
@@ -53,8 +56,8 @@ export default function Notifications() {
             <Row gap={spacing.md} style={{ alignItems: 'flex-start' }}>
               {!item.readAt ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand, marginTop: 7 }} /> : <View style={{ width: 8 }} />}
               <View style={{ flex: 1 }}>
-                <T variant="label">{item.title}</T>
-                <T color={colors.textMuted}>{item.body}</T>
+                <T variant="label">{stripLeadingEmoji(item.title)}</T>
+                <T color={colors.textMuted}>{stripLeadingEmoji(item.body)}</T>
                 <T variant="caption" color={colors.textFaint} style={{ marginTop: 2 }}>
                   {new Date(item.createdAt).toLocaleString()}
                 </T>

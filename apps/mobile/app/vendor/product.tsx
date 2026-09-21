@@ -8,6 +8,7 @@ import { Button, Chip, Field, InlineError, Loading, Row, Screen, Section, T, Tog
 import { api, errorMessage, fieldError } from '../../src/lib/api';
 import { pickAndUploadImage } from '../../src/lib/media';
 import { colors, radius, spacing } from '../../src/theme';
+import { categoryIcon } from '../../src/lib/icons';
 
 interface Category {
   id: string;
@@ -93,7 +94,7 @@ export default function VendorProduct() {
           </Pressable>
         ))}
         <Pressable onPress={() => void pickAndUploadImage('wishlist').then((url) => url && setImages([...images, url]))} style={{ width: 96, height: 96, borderRadius: radius.md, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
-          <T>📷 Add</T>
+          <T>Add</T>
         </Pressable>
       </ScrollView>
       {fieldError(save.error, 'images') ? <T color={colors.danger}>{fieldError(save.error, 'images')}</T> : null}
@@ -110,7 +111,7 @@ export default function VendorProduct() {
       <Section title="Category">
         <Row wrap>
           {categories.data?.map((category) => (
-            <Chip key={category.id} label={category.label} emoji={category.emoji} selected={categoryIds.includes(category.id)} onPress={() => setCategoryIds(categoryIds.includes(category.id) ? categoryIds.filter((value) => value !== category.id) : [...categoryIds, category.id])} />
+            <Chip key={category.id} label={category.label} icon={categoryIcon(category.slug)} selected={categoryIds.includes(category.id)} onPress={() => setCategoryIds(categoryIds.includes(category.id) ? categoryIds.filter((value) => value !== category.id) : [...categoryIds, category.id])} />
           ))}
         </Row>
         {fieldError(save.error, 'categoryIds') ? <T color={colors.danger}>{fieldError(save.error, 'categoryIds')}</T> : null}

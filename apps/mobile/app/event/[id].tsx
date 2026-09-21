@@ -4,7 +4,7 @@ import * as Calendar from 'expo-calendar';
 import { Image } from 'expo-image';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Alert, Linking, Platform, Share, View } from 'react-native';
-import { Avatar, Badge, Button, Card, Chip, ErrorState, Loading, Row, Screen, Section, T } from '../../src/components/ui';
+import { Avatar, Badge, Button, Card, Chip, ErrorState, InfoRow, Loading, Row, Screen, Section, T } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { WEB_URL } from '../../src/lib/config';
 import { useRealtimeRoom } from '../../src/lib/realtime';
@@ -52,7 +52,7 @@ export default function EventDetail() {
       location: [data.venueName, data.venueAddress].filter(Boolean).join(', '),
       notes: data.description ?? undefined,
     });
-    Alert.alert('📅 Added to your calendar');
+    Alert.alert('Added to your calendar');
   }
 
   if (event.isLoading) return <Loading />;
@@ -63,23 +63,23 @@ export default function EventDetail() {
     <Screen refreshing={event.isRefetching} onRefresh={() => void event.refetch()}>
       <Stack.Screen options={{ title: data.name }} />
       {data.coverImageUrl ? <Image source={{ uri: data.coverImageUrl }} style={{ height: 180, borderRadius: radius.lg, marginBottom: spacing.lg }} contentFit="cover" /> : null}
-      <T variant="title">🎉 {data.name}</T>
+      <T variant="title">{data.name}</T>
       <Row style={{ marginVertical: spacing.sm }} gap={spacing.sm}>
         <Avatar name={data.host.displayName} uri={data.host.avatarUrl} size={28} />
         <T color={colors.textMuted}>Hosted by {data.isHost ? 'you' : data.host.displayName}</T>
       </Row>
       <Card>
-        <T>🗓️ {new Date(data.startsAt).toLocaleString(undefined, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</T>
+        <InfoRow icon="calendar">{new Date(data.startsAt).toLocaleString(undefined, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</InfoRow>
         {data.venueName || data.venueAddress ? (
           <T style={{ marginTop: 4 }} color={colors.brand} onPress={() => void Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent([data.venueName, data.venueAddress].filter(Boolean).join(', '))}`)}>
-            📍 {[data.venueName, data.venueAddress].filter(Boolean).join(', ')}
+            {[data.venueName, data.venueAddress].filter(Boolean).join(', ')}
           </T>
         ) : null}
         {data.description ? <T style={{ marginTop: spacing.sm }}>{data.description}</T> : null}
         <Row wrap style={{ marginTop: spacing.md }}>
-          <Button small variant="secondary" icon="📅" title="Add to calendar" onPress={() => void addToCalendar()} />
-          {data.conversationId ? <Button small variant="secondary" icon="💬" title="Event chat" onPress={() => router.push(`/chat/${data.conversationId}`)} /> : null}
-          {data.wishlistId ? <Button small variant="secondary" icon="🎁" title="Gift registry" onPress={() => router.push(`/person/${data.hostId}`)} /> : null}
+          <Button small variant="secondary" icon="calendar" title="Add to calendar" onPress={() => void addToCalendar()} />
+          {data.conversationId ? <Button small variant="secondary" icon="chat" title="Event chat" onPress={() => router.push(`/chat/${data.conversationId}`)} /> : null}
+          {data.wishlistId ? <Button small variant="secondary" icon="gift" title="Gift registry" onPress={() => router.push(`/person/${data.hostId}`)} /> : null}
         </Row>
       </Card>
 
@@ -87,7 +87,7 @@ export default function EventDetail() {
         <Section title="Are you going?">
           <Row wrap>
             {(['GOING', 'MAYBE', 'DECLINED'] as const).map((status) => (
-              <Chip key={status} label={{ GOING: '✅ Going', MAYBE: '🤔 Maybe', DECLINED: '😢 Can’t attend' }[status]} selected={data.myRsvp === status} onPress={() => rsvp.mutate(status)} />
+              <Chip key={status} icon={({ GOING: 'checkCircle', MAYBE: 'help', DECLINED: 'close' } as const)[status]} label={{ GOING: 'Going', MAYBE: 'Maybe', DECLINED: 'Can’t attend' }[status]} selected={data.myRsvp === status} onPress={() => rsvp.mutate(status)} />
             ))}
           </Row>
         </Section>
@@ -116,7 +116,7 @@ export default function EventDetail() {
       {data.isHost ? (
         <Section title="Host tools">
           <View style={{ gap: spacing.sm }}>
-            <Button variant="secondary" icon="🔗" title="Share RSVP links" loading={shareLinks.isPending} onPress={() => shareLinks.mutate()} />
+            <Button variant="secondary" icon="link" title="Share RSVP links" loading={shareLinks.isPending} onPress={() => shareLinks.mutate()} />
             <Button variant="danger" title="Cancel event" onPress={() => Alert.alert('Cancel this event?', 'Guests will be notified.', [{ text: 'Keep', style: 'cancel' }, { text: 'Cancel event', style: 'destructive', onPress: () => cancel.mutate() }])} />
           </View>
         </Section>

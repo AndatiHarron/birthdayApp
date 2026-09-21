@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Alert, View } from 'react-native';
 import { money } from '../../src/components/gifting';
-import { Badge, Button, Card, ErrorState, Loading, Row, Screen, Section, T } from '../../src/components/ui';
+import { Badge, Button, Card, ErrorState, InfoRow, Loading, Row, Screen, Section, T } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { useRealtimeRoom } from '../../src/lib/realtime';
@@ -42,7 +42,7 @@ export default function OrderDetail() {
       <Stack.Screen options={{ title: data.reference }} />
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="heading">{isBuyer ? `Gift for ${data.recipient?.name ?? 'you'}` : '🎁 A gift for you'}</T>
+          <T variant="heading">{isBuyer ? `Gift for ${data.recipient?.name ?? 'you'}` : 'A gift for you'}</T>
           <Badge label={data.status.replace(/_/g, ' ').toLowerCase()} tone={data.status === 'FULFILLED' ? 'success' : data.status === 'CANCELLED' || data.status === 'REFUNDED' ? 'danger' : 'brand'} />
         </Row>
         {data.items.map((item) => (
@@ -60,12 +60,12 @@ export default function OrderDetail() {
             <T variant="heading">Total {money(data.totalMinor, data.currency)}</T>
           </View>
         ) : null}
-        {data.giftMessage ? <T style={{ marginTop: spacing.sm }}>💌 “{data.giftMessage}”</T> : null}
+        {data.giftMessage ? <InfoRow icon="mail">“{data.giftMessage}”</InfoRow> : null}
       </Card>
 
       {isBuyer && data.status === 'AWAITING_PAYMENT' && data.payment ? (
         <Card style={{ marginTop: spacing.md, backgroundColor: colors.goldSoft, borderColor: colors.goldSoft }}>
-          <T>⏳ Waiting for payment confirmation ({data.payment.status.toLowerCase()}).</T>
+          <InfoRow icon="hourglass">Waiting for payment confirmation ({data.payment.status.toLowerCase()}).</InfoRow>
           <Row style={{ marginTop: spacing.sm }}>
             <Button small title="Check payment" loading={retryPayment.isPending} onPress={() => retryPayment.mutate()} />
           </Row>
@@ -89,9 +89,9 @@ export default function OrderDetail() {
               );
             })}
             {['FAILED', 'RETURNED', 'CANCELLED'].includes(delivery.status) ? <Badge label={DELIVERY_STATUS_LABELS[delivery.status]} tone="danger" /> : null}
-            {delivery.scheduledDate ? <T color={colors.textMuted} style={{ marginTop: spacing.sm }}>📅 Scheduled {delivery.scheduledDate} {delivery.scheduledWindow ? `(${delivery.scheduledWindow.toLowerCase()})` : ''}</T> : null}
-            {delivery.trackingCode ? <T color={colors.textMuted}>🔎 Tracking: {delivery.trackingCode} {delivery.courier ? `· ${delivery.courier}` : ''}</T> : null}
-            {isBuyer && delivery.addressLine1 ? <T color={colors.textMuted}>📍 {[delivery.addressLine1, delivery.area, delivery.city].filter(Boolean).join(', ')}</T> : null}
+            {delivery.scheduledDate ? <InfoRow icon="calendar" color={colors.textMuted}>Scheduled {delivery.scheduledDate} {delivery.scheduledWindow ? `(${delivery.scheduledWindow.toLowerCase()})` : ''}</InfoRow> : null}
+            {delivery.trackingCode ? <InfoRow icon="truck" color={colors.textMuted}>Tracking: {delivery.trackingCode} {delivery.courier ? `· ${delivery.courier}` : ''}</InfoRow> : null}
+            {isBuyer && delivery.addressLine1 ? <InfoRow icon="mapPin" color={colors.textMuted}>{[delivery.addressLine1, delivery.area, delivery.city].filter(Boolean).join(", ")}</InfoRow> : null}
           </Card>
           {delivery.timeline.length ? (
             <View style={{ marginTop: spacing.md }}>
@@ -109,7 +109,7 @@ export default function OrderDetail() {
         {isBuyer && (data.status === 'AWAITING_PAYMENT' || (data.status === 'PAID' && (delivery?.status === 'PENDING' || delivery?.status === 'PROCESSING'))) ? (
           <Button small variant="danger" title="Cancel order" onPress={() => Alert.alert('Cancel this order?', data.status === 'PAID' ? 'You’ll be refunded.' : undefined, [{ text: 'Keep', style: 'cancel' }, { text: 'Cancel order', style: 'destructive', onPress: () => cancel.mutate() }])} />
         ) : null}
-        {!isBuyer && data.status === 'FULFILLED' ? <Button icon="❤️" title="Say thank you" onPress={() => router.push({ pathname: '/thank-you', params: { giftType: 'ORDER', giftId: data.id } })} /> : null}
+        {!isBuyer && data.status === 'FULFILLED' ? <Button icon="heart" title="Say thank you" onPress={() => router.push({ pathname: '/thank-you', params: { giftType: 'ORDER', giftId: data.id } })} /> : null}
         {isBuyer && data.status === 'FULFILLED' && data.items[0] ? <Button small variant="secondary" title="Review" onPress={() => router.push({ pathname: '/review', params: { productId: data.items[0]!.productId } })} /> : null}
       </Row>
     </Screen>

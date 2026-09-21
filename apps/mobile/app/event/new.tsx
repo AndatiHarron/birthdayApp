@@ -54,9 +54,9 @@ export default function NewEvent() {
       <Stack.Screen options={{ title: 'New event' }} />
       <InlineError error={create.error} />
       <Pressable onPress={() => void pickAndUploadImage('card').then((url) => url && setCover(url))} style={{ height: 150, borderRadius: radius.lg, backgroundColor: colors.brandSoft, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg }}>
-        {cover ? <Image source={{ uri: cover }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.brandDark}>🖼️ Add a cover photo</T>}
+        {cover ? <Image source={{ uri: cover }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.brandDark}>Add a cover photo</T>}
       </Pressable>
-      <Field label="Event name" value={name} onChangeText={setName} placeholder="Sarah’s 30th 🎉" error={fieldError(create.error, 'name')} />
+      <Field label="Event name" value={name} onChangeText={setName} placeholder="Sarah’s 30th" error={fieldError(create.error, 'name')} />
       <Row gap={spacing.md}>
         <View style={{ flex: 1 }}><Field label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} /></View>
         <View style={{ width: 110 }}><Field label="Time" value={time} onChangeText={setTime} placeholder="18:00" /></View>

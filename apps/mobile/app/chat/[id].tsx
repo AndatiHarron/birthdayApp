@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VoicePlayer, VoiceRecorder } from '../../src/components/VoiceRecorder';
-import { Button, Field, Loading, Row, T } from '../../src/components/ui';
+import { Button, Field, Icon, Loading, Row, T } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { pickAndUploadImage } from '../../src/lib/media';
@@ -106,13 +106,13 @@ export default function Chat() {
         options={{
           title: conversation.data?.title ?? 'Chat',
           headerRight: () =>
-            conversation.data?.groupGiftId ? <Button small variant="ghost" title="🎁 Gift" onPress={() => router.push(`/group-gift/${conversation.data!.groupGiftId}`)} /> : conversation.data?.eventId ? <Button small variant="ghost" title="🎉 Event" onPress={() => router.push(`/event/${conversation.data!.eventId}`)} /> : null,
+            conversation.data?.groupGiftId ? <Button small variant="ghost" icon="gift" title="Gift" onPress={() => router.push(`/group-gift/${conversation.data!.groupGiftId}`)} /> : conversation.data?.eventId ? <Button small variant="ghost" title="Event" onPress={() => router.push(`/event/${conversation.data!.eventId}`)} /> : null,
         }}
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         {isSurprise ? (
           <View style={{ backgroundColor: colors.goldSoft, padding: spacing.sm }}>
-            <T variant="caption" center>🤫 Secret planning group — the birthday person can’t see this chat.</T>
+            <T variant="caption" center>Secret planning group — the birthday person can’t see this chat.</T>
           </View>
         ) : null}
         {messages.isLoading ? <Loading /> : null}
@@ -135,11 +135,11 @@ export default function Chat() {
                   {item.kind === 'VOICE' && item.mediaUrl ? <VoicePlayer url={item.mediaUrl} durationSeconds={item.durationSeconds} /> : null}
                   {item.poll ? (
                     <View style={{ gap: 6, minWidth: 220 }}>
-                      <T variant="label" color={mine ? colors.white : colors.text}>📊 {item.poll.question}</T>
+                      <T variant="label" color={mine ? colors.white : colors.text}>{item.poll.question}</T>
                       {item.poll.options.map((option) => (
                         <Pressable key={option.id} onPress={() => vote.mutate({ pollId: item.poll!.id, optionId: option.id })} style={{ padding: 8, borderRadius: radius.sm, backgroundColor: option.votedByMe ? colors.brandSoft : colors.surfaceMuted }}>
                           <Row style={{ justifyContent: 'space-between' }}>
-                            <T>{option.votedByMe ? '✅ ' : ''}{option.label}</T>
+                            <Row gap={6}>{option.votedByMe ? <Icon name="check" size={14} color={colors.success} /> : null}<T>{option.label}</T></Row>
                             <T variant="label">{option.voteCount}</T>
                           </Row>
                         </Pressable>
@@ -172,13 +172,13 @@ export default function Chat() {
         ) : null}
         <Row style={{ padding: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface }}>
           <Pressable accessibilityLabel="Send photo" onPress={() => void pickAndUploadImage('chat').then((url) => url && send.mutate({ kind: 'IMAGE', mediaUrl: url }))} style={{ padding: 8 }}>
-            <T style={{ fontSize: 22 }}>📷</T>
+            <Icon name="camera" size={22} color={colors.textMuted} />
           </Pressable>
           <Pressable accessibilityLabel="Voice note" onPress={() => setPanel(panel === 'voice' ? 'none' : 'voice')} style={{ padding: 8 }}>
-            <T style={{ fontSize: 22 }}>🎤</T>
+            <Icon name="mic" size={22} color={colors.textMuted} />
           </Pressable>
           <Pressable accessibilityLabel="Poll" onPress={() => setPanel(panel === 'poll' ? 'none' : 'poll')} style={{ padding: 8 }}>
-            <T style={{ fontSize: 22 }}>📊</T>
+            <Icon name="chart" size={22} color={colors.textMuted} />
           </Pressable>
           <TextInput value={text} onChangeText={onChange} placeholder="Message" placeholderTextColor={colors.textFaint} multiline style={{ flex: 1, minHeight: 40, maxHeight: 120, backgroundColor: colors.surfaceMuted, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 8, color: colors.text }} />
           <Button small title="Send" disabled={!text.trim()} onPress={submitText} />

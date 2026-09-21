@@ -70,7 +70,7 @@ describeDb('birthdays, reminders and home (spec §6–8, §21, §65)', () => {
   it('builds the home feed in one request', async () => {
     const user = await registerUser({ displayName: 'Andati Home' });
     const response = await api().get('/api/v1/home').set(authHeader(user)).expect(200);
-    expect(response.body.data.greeting).toMatch(/Andati 👋$/);
+    expect(response.body.data.greeting).toMatch(/Andati$/);
     expect(Array.isArray(response.body.data.upcomingBirthdays)).toBe(true);
     expect(Array.isArray(response.body.data.giftIdeas)).toBe(true);
   });

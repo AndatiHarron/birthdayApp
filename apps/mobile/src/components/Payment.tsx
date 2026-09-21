@@ -44,7 +44,7 @@ export function PaymentMethodPicker({
           <Chip
             key={option.provider}
             label={option.label}
-            emoji={option.provider === 'MPESA' ? '📱' : option.provider === 'WALLET' ? '👛' : '💳'}
+            icon={option.provider === 'MPESA' ? 'smartphone' : option.provider === 'WALLET' ? 'wallet' : 'card'}
             selected={value === option.provider}
             onPress={() => onChange(option.provider)}
           />
@@ -102,7 +102,7 @@ export function PaymentStatusBanner({ payment, timedOut, onRetryCheck, successTe
     return (
       <View style={{ backgroundColor: colors.successSoft, padding: spacing.lg, borderRadius: 16, marginVertical: spacing.md }}>
         <T variant="heading" color={colors.success}>
-          ✅ {successText}
+          {successText}
         </T>
       </View>
     );
@@ -119,7 +119,7 @@ export function PaymentStatusBanner({ payment, timedOut, onRetryCheck, successTe
   }
   return (
     <View style={{ backgroundColor: colors.goldSoft, padding: spacing.lg, borderRadius: 16, marginVertical: spacing.md, gap: spacing.sm }}>
-      <T variant="heading">⏳ Waiting for confirmation…</T>
+      <T variant="heading">Waiting for confirmation…</T>
       <T color={colors.textMuted}>{payment.action?.type === 'AWAIT_STK_PUSH' ? payment.action.message : 'Complete the payment to continue.'}</T>
       {timedOut ? <Button small variant="secondary" title="Check again" onPress={onRetryCheck} /> : <Loading />}
     </View>

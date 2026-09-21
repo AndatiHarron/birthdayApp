@@ -32,7 +32,7 @@ export default function Wishlist() {
 
   async function share() {
     if (!detail.data) return;
-    await Share.share({ message: `🎁 Here's my birthday wishlist: ${detail.data.shareUrl}`, url: detail.data.shareUrl });
+    await Share.share({ message: `Here's my birthday wishlist: ${detail.data.shareUrl}`, url: detail.data.shareUrl });
   }
 
   const wishlist = detail.data;
@@ -42,8 +42,8 @@ export default function Wishlist() {
       <Row style={{ justifyContent: 'space-between' }}>
         <T variant="title">My wishlist</T>
         <Row>
-          <Button small variant="secondary" icon="📤" title="Share" onPress={() => void share()} disabled={!wishlist} />
-          <Button small icon="＋" title="Add" onPress={() => router.push({ pathname: '/wishlist/item-new', params: { wishlistId: activeId ?? '' } })} />
+          <Button small variant="secondary" icon="share" title="Share" onPress={() => void share()} disabled={!wishlist} />
+          <Button small icon="plus" title="Add" onPress={() => router.push({ pathname: '/wishlist/item-new', params: { wishlistId: activeId ?? '' } })} />
         </Row>
       </Row>
 
@@ -66,13 +66,13 @@ export default function Wishlist() {
                 {wishlist.itemCount} items · {wishlist.viewCount ?? 0} views
               </T>
             </View>
-            <Badge label={wishlist.visibility === 'PUBLIC' ? '🌍 Public' : wishlist.visibility === 'FRIENDS' ? '👥 Friends' : '🔒 Private'} />
+            <Badge icon={wishlist.visibility === 'PUBLIC' ? 'globe' : wishlist.visibility === 'FRIENDS' ? 'users' : 'lock'} label={wishlist.visibility === 'PUBLIC' ? 'Public' : wishlist.visibility === 'FRIENDS' ? 'Friends' : 'Private'} />
           </Row>
           <Row style={{ marginTop: spacing.md }} wrap>
             <Button small variant="ghost" title="Settings & sharing" onPress={() => router.push({ pathname: '/wishlist/settings', params: { id: wishlist.id } })} />
           </Row>
           <T variant="caption" color={colors.brandDark} style={{ marginTop: 4 }}>
-            🤫 What friends reserve stays a surprise — you’ll never see it here.
+            What friends reserve stays a surprise — you’ll never see it here.
           </T>
         </Card>
       ) : null}
@@ -81,7 +81,7 @@ export default function Wishlist() {
         {detail.isLoading || lists.isLoading ? [0, 1, 2].map((key) => <SkeletonCard key={key} />) : null}
         {wishlist && wishlist.items.length === 0 ? (
           <EmptyState
-            emoji="💝"
+            icon="heart"
             title="Your wishlist is empty"
             message="Add things you’d love — paste a product link and we’ll fill in the details."
             action={<Button title="Add your first wish" onPress={() => router.push({ pathname: '/wishlist/item-new', params: { wishlistId: wishlist.id } })} />}

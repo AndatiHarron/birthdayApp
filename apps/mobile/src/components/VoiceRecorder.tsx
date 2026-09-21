@@ -57,7 +57,7 @@ export function VoiceRecorder({ onRecorded, maxSeconds = 120 }: { onRecorded: (v
 
   return (
     <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md, alignItems: 'center' }}>
-      <T variant="title">{state.isRecording ? `🔴 ${seconds}s` : recorded ? `🎤 ${recorded.durationSeconds}s recorded` : '🎤 Record a voice wish'}</T>
+      <T variant="title">{state.isRecording ? `${seconds}s` : recorded ? `${recorded.durationSeconds}s recorded` : 'Record a voice wish'}</T>
       <Row>
         {state.isRecording ? (
           <Button title="Stop" variant="danger" onPress={() => void stop()} />
@@ -76,7 +76,7 @@ export function VoicePlayer({ url, durationSeconds }: { url: string; durationSec
     <Button
       small
       variant="secondary"
-      icon="▶️"
+      icon="play"
       title={durationSeconds ? `Play (${durationSeconds}s)` : 'Play'}
       onPress={() => {
         void player.seekTo(0);

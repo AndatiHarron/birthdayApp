@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { BirthdayCard, ProductCard } from '../../src/components/gifting';
-import { Avatar, Button, Card, EmptyState, ErrorState, Row, Screen, Section, SkeletonCard, T } from '../../src/components/ui';
+import { Avatar, Button, Card, EmptyState, ErrorState, Icon, IconTile, Row, Screen, Section, SkeletonCard, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { colors, gradients, radius, spacing } from '../../src/theme';
 
@@ -17,14 +17,14 @@ export default function Home() {
     <Screen edges={['top']} refreshing={feed.isRefetching} onRefresh={() => void feed.refetch()}>
       <Row style={{ justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
-          <T variant="title">{data?.greeting ?? 'Hello 👋'}</T>
+          <T variant="title">{data?.greeting ?? 'Hello'}</T>
           <T color={colors.textMuted}>Who’s celebrating soon?</T>
         </View>
         <Pressable onPress={() => router.push('/notifications')} accessibilityLabel="Notifications" style={{ padding: 8 }}>
-          <T style={{ fontSize: 24 }}>🔔</T>
+          <Icon name="bell" size={22} color={colors.text} />
         </Pressable>
         <Pressable onPress={() => router.push('/search')} accessibilityLabel="Search" style={{ padding: 8 }}>
-          <T style={{ fontSize: 24 }}>🔍</T>
+          <Icon name="search" size={22} color={colors.text} />
         </Pressable>
       </Row>
 
@@ -34,7 +34,7 @@ export default function Home() {
         <Pressable onPress={() => router.push('/celebration')} style={{ marginTop: spacing.lg }}>
           <LinearGradient colors={gradients.celebration} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
             <T variant="title" color={colors.white}>
-              🎉 Happy birthday!
+              Happy birthday!
             </T>
             <T color={colors.white} style={{ marginTop: 4 }}>
               {data.myBirthdayToday.wishCount} wishes · {data.myBirthdayToday.giftCount} gifts waiting — tap to celebrate
@@ -67,18 +67,18 @@ export default function Home() {
 
       <GlobalTeaser />
 
-      <Section title="🎂 Upcoming Birthdays" action={<Pressable onPress={() => router.push('/(tabs)/birthdays')}><T variant="label" color={colors.brand}>See all</T></Pressable>}>
+      <Section icon="cake" title="Upcoming Birthdays" action={<Pressable onPress={() => router.push('/(tabs)/birthdays')}><T variant="label" color={colors.brand}>See all</T></Pressable>}>
         {feed.isLoading ? [0, 1].map((key) => <SkeletonCard key={key} height={130} />) : null}
         {data && data.upcomingBirthdays.length === 0 ? (
           <Card>
-            <EmptyState emoji="🎈" title="No birthdays yet" message="Add friends and family so you never miss a birthday." action={<Button small title="Add a birthday" onPress={() => router.push('/birthday/new')} />} />
+            <EmptyState icon="party" title="No birthdays yet" message="Add friends and family so you never miss a birthday." action={<Button small title="Add a birthday" onPress={() => router.push('/birthday/new')} />} />
           </Card>
         ) : null}
         {data?.upcomingBirthdays.slice(0, 5).map((birthday) => <BirthdayCard key={birthday.id} birthday={birthday} />)}
       </Section>
 
       {data && data.giftIdeas.length > 0 ? (
-        <Section title="🎁 Gift Ideas For You" action={<Pressable onPress={() => router.push('/gift-finder')}><T variant="label" color={colors.brand}>Ask AI</T></Pressable>}>
+        <Section icon="gift" title="Gift Ideas For You" action={<Pressable onPress={() => router.push('/gift-finder')}><T variant="label" color={colors.brand}>Ask AI</T></Pressable>}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
             {data.giftIdeas.map((idea, index) => (
               <ProductCard
@@ -93,7 +93,7 @@ export default function Home() {
       ) : null}
 
       {data && data.friendHighlights.length > 0 ? (
-        <Section title="❤️ Your Friends">
+        <Section icon="heart" title="Your Friends">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
             {data.friendHighlights.map((highlight) => (
               <Pressable key={highlight.user.id} onPress={() => router.push(`/person/${highlight.user.id}`)} style={{ width: 96, alignItems: 'center' }}>
@@ -110,11 +110,11 @@ export default function Home() {
         </Section>
       ) : null}
 
-      <Section title="🎉 Recent Activity">
+      <Section icon="party" title="Recent Activity">
         {data && data.activity.length === 0 ? <T color={colors.textMuted}>Activity from your friends will show up here.</T> : null}
         {data?.activity.map((item) => (
           <Row key={item.id} gap={spacing.md} style={{ paddingVertical: spacing.sm }}>
-            <Avatar name={item.actor?.displayName ?? '🎁'} uri={item.actor?.avatarUrl} size={36} />
+            <Avatar name={item.actor?.displayName ?? ''} uri={item.actor?.avatarUrl} size={36} />
             <View style={{ flex: 1 }}>
               <T>{item.text}</T>
               <T variant="caption" color={colors.textFaint}>
@@ -126,9 +126,9 @@ export default function Home() {
       </Section>
 
       <Row gap={spacing.sm} style={{ marginTop: spacing.xl }} wrap>
-        <Button small variant="secondary" icon="✨" title="Smart gift finder" onPress={() => router.push('/gift-finder')} />
-        <Button small variant="secondary" icon="🎉" title="Events" onPress={() => router.push('/events')} />
-        <Button small variant="secondary" icon="💬" title="Chats" onPress={() => router.push('/chats')} />
+        <Button small variant="secondary" icon="sparkles" title="Smart gift finder" onPress={() => router.push('/gift-finder')} />
+        <Button small variant="secondary" icon="party" title="Events" onPress={() => router.push('/events')} />
+        <Button small variant="secondary" icon="chat" title="Chats" onPress={() => router.push('/chats')} />
       </Row>
     </Screen>
   );
@@ -147,7 +147,7 @@ function GlobalTeaser() {
     <Pressable onPress={() => router.push('/global')} style={{ marginTop: spacing.lg }} accessibilityRole="button" accessibilityLabel="Open global birthdays">
       <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.lg }}>
         <Row gap={spacing.md}>
-          <T style={{ fontSize: 34 }}>🌍</T>
+          <IconTile name="globe" size={44} tone="onDark" />
           <View style={{ flex: 1 }}>
             <T variant="heading" color={colors.white}>
               {totalCelebrating === 0
@@ -156,10 +156,10 @@ function GlobalTeaser() {
             </T>
             <T variant="caption" color={colors.white} style={{ marginTop: 2, opacity: 0.95 }}>
               {firstTimers > 0
-                ? `${firstTimers} celebrating for the first time. Make someone feel noticed 💜`
+                ? `${firstTimers} celebrating for the first time. Make someone feel noticed`
                 : totalCelebrating === 0
                   ? 'Celebrate people around the world on their birthday.'
-                  : 'Send a cheer, a wish or a small gift to someone who needs it 💜'}
+                  : 'Send a cheer, a wish or a small gift to someone who needs it'}
             </T>
           </View>
         </Row>

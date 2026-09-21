@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Pressable, View } from 'react-native';
 import { api } from '../lib/api';
 import { colors, spacing } from '../theme';
-import { Avatar, Loading, Row, T } from './ui';
+import { Avatar, Icon, Loading, Row, T } from './ui';
 
 /** Multi-select of friends, excluding anyone who must not be included (the birthday person). */
 export function FriendPicker({ selected, onChange, excludeIds = [] }: { selected: string[]; onChange: (ids: string[]) => void; excludeIds?: string[] }) {
@@ -26,7 +26,7 @@ export function FriendPicker({ selected, onChange, excludeIds = [] }: { selected
             <Row gap={spacing.md}>
               <Avatar name={friend.user.displayName} uri={friend.user.avatarUrl} size={40} />
               <T style={{ flex: 1 }}>{friend.user.displayName}</T>
-              <T style={{ fontSize: 20 }}>{isSelected ? '✅' : '⚪'}</T>
+              <Icon name={isSelected ? 'checkCircle' : 'circle'} size={22} color={isSelected ? colors.brand : colors.textFaint} />
             </Row>
           </Pressable>
         );

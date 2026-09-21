@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { Avatar, Button, Card, Chip, Divider, InlineError, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
+import { Avatar, Button, Card, Chip, Divider, Icon, InlineError, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { colors, spacing } from '../../src/theme';
@@ -13,9 +13,9 @@ function VisibilityRow({ label, value, onChange }: { label: string; value: Visib
     <View style={{ paddingVertical: spacing.sm }}>
       <T variant="label" style={{ marginBottom: 6 }}>{label}</T>
       <Row wrap>
-        <Chip label="🌍 Public" selected={value === 'PUBLIC'} onPress={() => onChange('PUBLIC')} />
-        <Chip label="👥 Friends" selected={value === 'FRIENDS'} onPress={() => onChange('FRIENDS')} />
-        <Chip label="🔒 Only me" selected={value === 'PRIVATE'} onPress={() => onChange('PRIVATE')} />
+        <Chip icon="globe" label="Public" selected={value === 'PUBLIC'} onPress={() => onChange('PUBLIC')} />
+        <Chip icon="users" label="Friends" selected={value === 'FRIENDS'} onPress={() => onChange('FRIENDS')} />
+        <Chip icon="lock" label="Only me" selected={value === 'PRIVATE'} onPress={() => onChange('PRIVATE')} />
       </Row>
     </View>
   );
@@ -64,11 +64,22 @@ export default function PrivacySettingsScreen() {
           <Toggle label="By email" value={settings.discoverableByEmail} onChange={(value) => set('discoverableByEmail', value)} />
         </Card>
       </Section>
+      <Section title="Your birthday page">
+        <Card onPress={() => router.push('/settings/public-page')}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <T variant="label">{settings.publicPage ? 'Your page is live' : 'Share one link in your bio'}</T>
+              <T variant="caption" color={colors.textMuted}>A public countdown and wishlist at your own link. Never your address, phone or age.</T>
+            </View>
+            <Icon name="chevronRight" size={18} color={colors.textFaint} />
+          </Row>
+        </Card>
+      </Section>
       <Section title="Global birthdays">
         <Card onPress={() => router.push('/global')}>
           <Row style={{ justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
-              <T variant="label">🌍 {settings.celebrateGlobally ? 'You’re celebrated globally' : 'Let people around the world celebrate you'}</T>
+              <T variant="label">{settings.celebrateGlobally ? 'You’re celebrated globally' : 'Let people around the world celebrate you'}</T>
               <T variant="caption" color={colors.textMuted}>Strangers can cheer, wish and send digital gifts on your birthday. Never physical gifts. Adults only.</T>
             </View>
             <T color={colors.brand}>›</T>

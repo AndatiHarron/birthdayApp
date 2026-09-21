@@ -5,7 +5,7 @@ import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, View } from 'react-native';
 import { MONTHS } from '../src/components/DatePicker';
-import { Avatar, Badge, Button, Card, EmptyState, InlineError, Loading, Row, Screen, T } from '../src/components/ui';
+import { Avatar, Badge, Button, Card, EmptyState, Icon, InlineError, Loading, Row, Screen, T } from '../src/components/ui';
 import { api, errorMessage } from '../src/lib/api';
 import { colors, spacing } from '../src/theme';
 
@@ -96,7 +96,7 @@ export default function ContactsImport() {
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['birthdays'] });
       void queryClient.invalidateQueries({ queryKey: ['home'] });
-      Alert.alert('🎉 Imported', `${result.imported} birthdays added to your calendar.`);
+      Alert.alert('Imported', `${result.imported} birthdays added to your calendar.`);
       router.replace('/(tabs)/birthdays');
     },
     onError: (caught) => Alert.alert('Import failed', errorMessage(caught)),
@@ -110,18 +110,18 @@ export default function ContactsImport() {
       <Stack.Screen options={{ title: 'Import from contacts' }} />
       {!candidates ? (
         <>
-          <EmptyState emoji="📇" title="Find birthdays you already have" message="We’ll look for birthdays and friends already on the app. Nothing is saved until you choose." />
+          <EmptyState icon="contacts" title="Find birthdays you already have" message="We’ll look for birthdays and friends already on the app. Nothing is saved until you choose." />
           <InlineError error={error} />
           {loading ? <Loading label="Reading contacts…" /> : <Button title="Scan my contacts" onPress={() => void scan()} />}
           <Button variant="ghost" title="Skip" onPress={() => router.replace('/(tabs)')} style={{ marginTop: spacing.md }} />
         </>
       ) : candidates.length === 0 ? (
-        <EmptyState emoji="🤷" title="No new birthdays found" message="Add birthdays manually or invite friends instead." action={<Button title="Done" onPress={() => router.replace('/(tabs)')} />} />
+        <EmptyState icon="help" title="No new birthdays found" message="Add birthdays manually or invite friends instead." action={<Button title="Done" onPress={() => router.replace('/(tabs)')} />} />
       ) : (
         <>
           {onApp.length ? (
             <Card style={{ marginBottom: spacing.md, backgroundColor: colors.brandSoft, borderColor: colors.brandSoft }}>
-              <T variant="label" color={colors.brandDark}>👋 {onApp.length} of your contacts are already on the app</T>
+              <T variant="label" color={colors.brandDark}>{onApp.length} of your contacts are already on the app</T>
             </Card>
           ) : null}
           <T variant="heading" style={{ marginBottom: spacing.sm }}>{withBirthday.length} with birthdays</T>
@@ -142,10 +142,10 @@ export default function ContactsImport() {
                   <Avatar name={candidate.name} uri={candidate.matchedUser?.avatarUrl} size={40} />
                   <View style={{ flex: 1 }}>
                     <T variant="label">{candidate.name}</T>
-                    <T variant="caption" color={colors.textMuted}>🎂 {MONTHS[candidate.birthday!.month - 1]} {candidate.birthday!.day}</T>
+                    <T variant="caption" color={colors.textMuted}>{MONTHS[candidate.birthday!.month - 1]} {candidate.birthday!.day}</T>
                   </View>
                   {candidate.matchedUser ? <Badge label="On app" tone="success" /> : null}
-                  <T style={{ fontSize: 20 }}>{isSelected ? '✅' : '⚪'}</T>
+                  <Icon name={isSelected ? 'checkCircle' : 'circle'} size={22} color={isSelected ? colors.brand : colors.textFaint} />
                 </Row>
               </Pressable>
             );

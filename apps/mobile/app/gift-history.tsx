@@ -29,22 +29,22 @@ export default function GiftHistory() {
     <Screen refreshing={history.isRefetching} onRefresh={() => void history.refetch()}>
       <Stack.Screen options={{ title: 'Gift history' }} />
       <Row style={{ marginBottom: spacing.lg }}>
-        <Chip label="🎁 Received" selected={direction === 'RECEIVED'} onPress={() => setDirection('RECEIVED')} />
-        <Chip label="💝 Given" selected={direction === 'SENT'} onPress={() => setDirection('SENT')} />
+        <Chip icon="gift" label="Received" selected={direction === 'RECEIVED'} onPress={() => setDirection('RECEIVED')} />
+        <Chip icon="heart" label="Given" selected={direction === 'SENT'} onPress={() => setDirection('SENT')} />
       </Row>
       <T variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.md }}>
-        🔒 Only you can see this, unless you share it in privacy settings. It helps you avoid giving the same thing twice.
+        Only you can see this, unless you share it in privacy settings. It helps you avoid giving the same thing twice.
       </T>
       {history.isLoading ? <Loading /> : null}
       {history.error ? <ErrorState error={history.error} /> : null}
-      {history.data?.length === 0 ? <EmptyState emoji="📜" title="No gifts recorded yet" message="Completed gifts are added automatically." /> : null}
+      {history.data?.length === 0 ? <EmptyState icon="receipt" title="No gifts recorded yet" message="Completed gifts are added automatically." /> : null}
       {byYear.map(([year, entries]) => (
         <View key={year} style={{ marginBottom: spacing.lg }}>
           <T variant="heading" style={{ marginBottom: spacing.sm }}>{year}</T>
           {entries.map((entry) => (
             <Card key={entry.id} style={{ marginBottom: spacing.sm }}>
               <Row gap={spacing.md}>
-                {entry.imageUrl ? <Image source={{ uri: entry.imageUrl }} style={{ width: 52, height: 52, borderRadius: radius.md }} /> : <Avatar name={entry.counterparty?.displayName ?? '🎁'} uri={entry.counterparty?.avatarUrl} size={52} />}
+                {entry.imageUrl ? <Image source={{ uri: entry.imageUrl }} style={{ width: 52, height: 52, borderRadius: radius.md }} /> : <Avatar name={entry.counterparty?.displayName ?? ''} uri={entry.counterparty?.avatarUrl} size={52} />}
                 <View style={{ flex: 1 }}>
                   <T variant="label">{entry.title}</T>
                   <T variant="caption" color={colors.textMuted}>
@@ -53,14 +53,14 @@ export default function GiftHistory() {
                   </T>
                   {entry.message ? <T variant="caption">“{entry.message}”</T> : null}
                 </View>
-                {direction === 'RECEIVED' && !entry.thankedAt && entry.source !== 'MANUAL' ? <T variant="caption" color={colors.pink}>Say thanks</T> : null}
+                {direction === 'RECEIVED' && !entry.thankedAt && entry.source !== 'MANUAL' ? <T variant="caption" color={colors.accent}>Say thanks</T> : null}
               </Row>
             </Card>
           ))}
         </View>
       ))}
 
-      <Section title="❤️ Thank-yous you received">
+      <Section icon="heart" title="Thank-yous you received">
         {thanks.data?.length === 0 ? <T color={colors.textMuted}>None yet.</T> : null}
         {thanks.data?.map((thank) => (
           <Card key={thank.id} style={{ marginBottom: spacing.sm }}>
@@ -74,7 +74,7 @@ export default function GiftHistory() {
           </Card>
         ))}
       </Section>
-      <Button variant="ghost" title="📸 Birthday memories" onPress={() => router.push('/memories')} style={{ marginTop: spacing.lg }} />
+      <Button variant="ghost" icon="camera" title="Birthday memories" onPress={() => router.push('/memories')} style={{ marginTop: spacing.lg }} />
     </Screen>
   );
 }

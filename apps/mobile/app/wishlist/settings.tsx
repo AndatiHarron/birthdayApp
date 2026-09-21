@@ -71,9 +71,9 @@ export default function WishlistSettings() {
         Who can see it
       </T>
       <Row wrap>
-        <Chip label="🌍 Anyone with the link" selected={visibility === 'PUBLIC'} onPress={() => setVisibility('PUBLIC')} />
-        <Chip label="👥 Friends" selected={visibility === 'FRIENDS'} onPress={() => setVisibility('FRIENDS')} />
-        <Chip label="🔒 Only me" selected={visibility === 'PRIVATE'} onPress={() => setVisibility('PRIVATE')} />
+        <Chip icon="globe" label="Anyone with the link" selected={visibility === 'PUBLIC'} onPress={() => setVisibility('PUBLIC')} />
+        <Chip icon="users" label="Friends" selected={visibility === 'FRIENDS'} onPress={() => setVisibility('FRIENDS')} />
+        <Chip icon="lock" label="Only me" selected={visibility === 'PRIVATE'} onPress={() => setVisibility('PRIVATE')} />
       </Row>
       <T variant="caption" color={colors.textMuted} style={{ marginTop: 6 }}>
         Your global wishlist privacy setting also applies — the stricter of the two wins.
@@ -87,11 +87,11 @@ export default function WishlistSettings() {
             {url}
           </T>
           <View style={{ gap: spacing.sm, width: '100%' }}>
-            <Button icon="🟢" title="WhatsApp" variant="secondary" onPress={() => void Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => Alert.alert('WhatsApp is not installed'))} />
-            <Button icon="💬" title="SMS" variant="secondary" onPress={() => void Linking.openURL(`sms:?&body=${encodeURIComponent(message)}`)} />
-            <Button icon="✉️" title="Email" variant="secondary" onPress={() => void Linking.openURL(`mailto:?subject=${encodeURIComponent('My birthday wishlist')}&body=${encodeURIComponent(message)}`)} />
-            <Button icon="📋" title="Copy link" variant="secondary" onPress={() => void Clipboard.setStringAsync(url).then(() => Alert.alert('Link copied'))} />
-            <Button icon="📤" title="More…" variant="secondary" onPress={() => void Share.share({ message, url })} />
+            <Button icon="chat" title="WhatsApp" variant="secondary" onPress={() => void Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => Alert.alert('WhatsApp is not installed'))} />
+            <Button icon="chat" title="SMS" variant="secondary" onPress={() => void Linking.openURL(`sms:?&body=${encodeURIComponent(message)}`)} />
+            <Button icon="mail" title="Email" variant="secondary" onPress={() => void Linking.openURL(`mailto:?subject=${encodeURIComponent('My birthday wishlist')}&body=${encodeURIComponent(message)}`)} />
+            <Button icon="list" title="Copy link" variant="secondary" onPress={() => void Clipboard.setStringAsync(url).then(() => Alert.alert('Link copied'))} />
+            <Button icon="share" title="More…" variant="secondary" onPress={() => void Share.share({ message, url })} />
           </View>
         </Card>
         <Button small variant="ghost" title="Reset link (old links stop working)" loading={rotate.isPending} onPress={() => rotate.mutate()} style={{ marginTop: spacing.md }} />

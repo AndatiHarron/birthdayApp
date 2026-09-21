@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Dimensions, ScrollView, View } from 'react-native';
 import { PaymentMethodPicker, PaymentStatusBanner, usePaymentStatus } from '../../src/components/Payment';
 import { money } from '../../src/components/gifting';
-import { Avatar, Badge, Button, Card, Chip, ErrorState, Field, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
+import { Avatar, Badge, Button, Card, Chip, ErrorState, Field, Icon, InfoRow, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api, idempotencyKey } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
 import { colors, spacing } from '../../src/theme';
@@ -99,20 +99,20 @@ export default function Product() {
             {money(data.priceMinor, data.currency)}
           </T>
           {data.compareAtPriceMinor ? <T color={colors.textFaint} style={{ textDecorationLine: 'line-through' }}>{money(data.compareAtPriceMinor, data.currency)}</T> : null}
-          {data.rating ? <Badge label={`⭐ ${data.rating.toFixed(1)} (${data.reviewCount})`} tone="gold" /> : null}
+          {data.rating ? <Badge icon="star" label={`${data.rating.toFixed(1)} (${data.reviewCount})`} tone="gold" /> : null}
           {data.stock === 0 ? <Badge label="Out of stock" tone="danger" /> : data.stock != null && data.stock < 5 ? <Badge label={`Only ${data.stock} left`} tone="gold" /> : <Badge label="Available" tone="success" />}
         </Row>
-        <T color={colors.textMuted} style={{ marginTop: spacing.sm }}>
-          🏪 {data.vendor.name}
-          {data.location?.city ? ` · 📍 ${[data.location.area, data.location.city].filter(Boolean).join(', ')}` : ''}
-        </T>
-        <T color={colors.textMuted}>
-          🚚 {data.deliveryEstimate ?? 'Delivery time confirmed by the shop'} · {data.deliveryFeeMinor ? `delivery ${money(data.deliveryFeeMinor, data.currency)}` : 'free delivery'}
-        </T>
+        <InfoRow icon="store" color={colors.textMuted}>
+          {data.vendor.name}
+          {data.location?.city ? ` · ${[data.location.area, data.location.city].filter(Boolean).join(', ')}` : ''}
+        </InfoRow>
+        <InfoRow icon="truck" color={colors.textMuted}>
+          {data.deliveryEstimate ?? 'Delivery time confirmed by the shop'} · {data.deliveryFeeMinor ? `delivery ${money(data.deliveryFeeMinor, data.currency)}` : 'free delivery'}
+        </InfoRow>
         <T style={{ marginTop: spacing.md, lineHeight: 22 }}>{data.description}</T>
 
         {!checkout ? (
-          <Button title="🎁 Gift this" disabled={data.stock === 0} onPress={() => setCheckout(true)} style={{ marginTop: spacing.xl }} />
+          <Button icon="gift" title="Gift this" disabled={data.stock === 0} onPress={() => setCheckout(true)} style={{ marginTop: spacing.xl }} />
         ) : (
           <>
             <Section title="Who is it for?">
@@ -132,8 +132,8 @@ export default function Product() {
 
             <Section title="Delivery">
               <Row wrap>
-                <Chip label="🚚 Deliver to them" selected={target === 'RECIPIENT'} onPress={() => setTarget('RECIPIENT')} />
-                <Chip label="🤲 Deliver to me" selected={target === 'SENDER'} onPress={() => setTarget('SENDER')} />
+                <Chip icon="truck" label="Deliver to them" selected={target === 'RECIPIENT'} onPress={() => setTarget('RECIPIENT')} />
+                <Chip icon="care" label="Deliver to me" selected={target === 'SENDER'} onPress={() => setTarget('SENDER')} />
               </Row>
               {target === 'RECIPIENT' ? (
                 <View style={{ marginTop: spacing.md }}>
@@ -173,7 +173,7 @@ export default function Product() {
             </Section>
 
             <Section title="Message & payment">
-              <Field label="Gift message" multiline value={message} onChangeText={setMessage} placeholder="Happy birthday! ❤️" />
+              <Field label="Gift message" multiline value={message} onChangeText={setMessage} placeholder="Happy birthday!" />
               <Toggle label="Send anonymously" value={anonymous} onChange={setAnonymous} />
               <Field label="Promo code" autoCapitalize="characters" value={coupon} onChangeText={setCoupon} placeholder="BIRTHDAY10" />
               <Card style={{ marginBottom: spacing.md }}>
@@ -194,7 +194,7 @@ export default function Product() {
               <Row gap={spacing.sm}>
                 <Avatar name={review.author?.displayName ?? 'A'} uri={review.author?.avatarUrl} size={28} />
                 <T variant="label">{review.author?.displayName ?? 'Customer'}</T>
-                <T>{'⭐'.repeat(review.rating)}</T>
+                <Row gap={2}>{[1, 2, 3, 4, 5].map((value) => <Icon key={value} name="star" size={13} color={value <= review.rating ? colors.gold : colors.border} fill={value <= review.rating ? colors.gold : 'none'} />)}</Row>
               </Row>
               {review.title ? <T variant="label" style={{ marginTop: 4 }}>{review.title}</T> : null}
               {review.body ? <T color={colors.textMuted}>{review.body}</T> : null}

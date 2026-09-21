@@ -23,7 +23,7 @@ export default function Invite() {
   }, []);
 
   const invite = create.data;
-  const message = invite ? `🎂 ${user?.displayName ?? 'A friend'} wants to celebrate your birthday! Join me on Birthday: ${invite.url}` : '';
+  const message = invite ? `${user?.displayName ?? 'A friend'} wants to celebrate your birthday! Join me on Birthday: ${invite.url}` : '';
 
   return (
     <Screen>
@@ -40,10 +40,10 @@ export default function Invite() {
             Valid until {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : 'forever'}
           </T>
           <View style={{ width: '100%', gap: spacing.sm }}>
-            <Button icon="🟢" title="Share on WhatsApp" onPress={() => void Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => Alert.alert('WhatsApp is not installed'))} />
-            <Button variant="secondary" icon="💬" title="Send SMS" onPress={() => void Linking.openURL(`sms:?&body=${encodeURIComponent(message)}`)} />
-            <Button variant="secondary" icon="📋" title="Copy link" onPress={() => void Clipboard.setStringAsync(invite.url).then(() => Alert.alert('Copied'))} />
-            <Button variant="secondary" icon="📤" title="More…" onPress={() => void Share.share({ message })} />
+            <Button icon="chat" title="Share on WhatsApp" onPress={() => void Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`).catch(() => Alert.alert('WhatsApp is not installed'))} />
+            <Button variant="secondary" icon="chat" title="Send SMS" onPress={() => void Linking.openURL(`sms:?&body=${encodeURIComponent(message)}`)} />
+            <Button variant="secondary" icon="list" title="Copy link" onPress={() => void Clipboard.setStringAsync(invite.url).then(() => Alert.alert('Copied'))} />
+            <Button variant="secondary" icon="share" title="More…" onPress={() => void Share.share({ message })} />
           </View>
         </Card>
       )}

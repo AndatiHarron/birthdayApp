@@ -22,8 +22,8 @@ export default function Orders() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Stack.Screen options={{ title: 'Orders' }} />
       <Row style={{ padding: spacing.lg, paddingBottom: 0 }}>
-        <Chip label="🎁 Gifts I sent" selected={direction === 'SENT'} onPress={() => setDirection('SENT')} />
-        <Chip label="📦 Gifts I received" selected={direction === 'RECEIVED'} onPress={() => setDirection('RECEIVED')} />
+        <Chip icon="gift" label="Gifts I sent" selected={direction === 'SENT'} onPress={() => setDirection('SENT')} />
+        <Chip icon="package" label="Gifts I received" selected={direction === 'RECEIVED'} onPress={() => setDirection('RECEIVED')} />
       </Row>
       {orders.isLoading ? <Loading /> : null}
       {orders.error && items.length === 0 ? <ErrorState error={orders.error} onRetry={() => void orders.refetch()} /> : null}
@@ -34,7 +34,7 @@ export default function Orders() {
         refreshing={orders.isRefetching}
         onRefresh={() => void orders.refetch()}
         onEndReached={() => orders.hasNextPage && void orders.fetchNextPage()}
-        ListEmptyComponent={!orders.isLoading ? <EmptyState emoji="📦" title="No orders yet" /> : null}
+        ListEmptyComponent={!orders.isLoading ? <EmptyState icon="package" title="No orders yet" /> : null}
         renderItem={({ item }) => (
           <Card onPress={() => router.push(`/order/${item.id}`)} style={{ marginBottom: spacing.md }}>
             <Row style={{ justifyContent: 'space-between' }}>

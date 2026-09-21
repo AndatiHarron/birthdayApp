@@ -7340,6 +7340,10 @@
                     "maxLength": 64,
                     "pattern": "^[A-Za-z0-9_-]+$"
                   },
+                  "useRecipientAddress": {
+                    "type": "boolean",
+                    "default": false
+                  },
                   "deliveryAddress": {
                     "type": "object",
                     "properties": {
@@ -14839,6 +14843,12 @@
                     "type": "boolean"
                   },
                   "discoverableByUsername": {
+                    "type": "boolean"
+                  },
+                  "publicPage": {
+                    "type": "boolean"
+                  },
+                  "publicGifting": {
                     "type": "boolean"
                   }
                 },

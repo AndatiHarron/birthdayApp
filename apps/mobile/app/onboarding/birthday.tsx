@@ -16,7 +16,7 @@ export default function OnboardingBirthday() {
         STEP 1 OF 3
       </T>
       <T variant="display" style={{ marginVertical: spacing.sm }}>
-        When is your birthday? 🎂
+        When is your birthday?
       </T>
       <T color={colors.textMuted} style={{ marginBottom: spacing.xl }}>
         Your friends get reminded so they can celebrate you.

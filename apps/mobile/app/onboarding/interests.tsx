@@ -7,6 +7,7 @@ import { Button, Chip, Screen, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { colors, spacing } from '../../src/theme';
 import { onboardingDraft } from '../../src/lib/onboardingDraft';
+import { interestIcon } from '../../src/lib/icons';
 
 /** Onboarding screen 3 (spec §4): "What do you love?" — feeds AI gift matching. */
 export default function OnboardingInterests() {
@@ -22,14 +23,14 @@ export default function OnboardingInterests() {
         STEP 2 OF 3
       </T>
       <T variant="display" style={{ marginVertical: spacing.sm }}>
-        What do you love? 💜
+        What do you love?
       </T>
       <T color={colors.textMuted} style={{ marginBottom: spacing.xl }}>
         Pick a few. We use them to suggest gifts people will actually like.
       </T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {catalog.map((interest) => (
-          <Chip key={interest.slug} label={interest.label} emoji={interest.emoji} selected={selected.includes(interest.slug)} onPress={() => toggle(interest.slug)} />
+          <Chip key={interest.slug} label={interest.label} icon={interestIcon(interest.slug)} selected={selected.includes(interest.slug)} onPress={() => toggle(interest.slug)} />
         ))}
       </View>
       <Button

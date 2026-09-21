@@ -105,4 +105,5 @@ These are enforced on the server and covered by tests:
 5. **Payment success comes only from the provider,** through a server-side verify or a signed webhook. A client's "paid" is never trusted.
 6. **Delivery status is tracked** as Pending → Processing → Dispatched → Out for delivery → Delivered.
 7. **Notifications respect user settings.**
-8. **Global birthdays are opt-in and adults only.** Strangers can cheer, wish and send digital gifts (money included, capped per gift and per day) to people who opted in. **Physical gifts (orders, wishlist reservations, group gifts) are only between connected people.**
+8. **A published link-in-bio page (`/@username`) is an explicit invitation.** With *gifts from the link* on, anyone holding it may claim and buy wishlist gifts; deliveries go to the owner's saved address, which the buyer never sees. The page never reveals contacts, birth year, address or who claimed what.
+9. **Global birthdays are opt-in and adults only.** Strangers can cheer, wish and send digital gifts (money included, capped per gift and per day) to people who opted in. **Physical gifts (orders, wishlist reservations, group gifts) are only between connected people.**

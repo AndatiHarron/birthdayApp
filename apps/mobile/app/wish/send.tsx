@@ -55,17 +55,17 @@ export default function SendWish() {
       });
     },
     onSuccess: () => {
-      Alert.alert('💌 Sent!', `${recipient?.name.split(' ')[0]} will love it.`);
+      Alert.alert('Sent!', `${recipient?.name.split(' ')[0]} will love it.`);
       router.back();
     },
   });
 
   if (isLoading) return <Loading />;
-  if (!recipient) return <EmptyState emoji="🤷" title="Choose who to wish" />;
+  if (!recipient) return <EmptyState icon="help" title="Choose who to wish" />;
   if (!recipient.userId) {
     return (
       <Screen>
-        <EmptyState emoji="📨" title={`${recipient.name} isn’t on the app yet`} message="Invite them so they can receive wishes and gifts." action={<Button title="Invite" onPress={() => router.replace({ pathname: '/invite', params: { birthdayId: recipient.birthdayId ?? '' } })} />} />
+        <EmptyState icon="send" title={`${recipient.name} isn’t on the app yet`} message="Invite them so they can receive wishes and gifts." action={<Button title="Invite" onPress={() => router.replace({ pathname: '/invite', params: { birthdayId: recipient.birthdayId ?? '' } })} />} />
       </Screen>
     );
   }
@@ -80,10 +80,10 @@ export default function SendWish() {
         <T variant="heading">To {recipient.name}</T>
       </Row>
       <Row wrap>
-        <Chip label="💌 Card" selected={kind === 'CARD'} onPress={() => setKind('CARD')} />
-        <Chip label="✍️ Message" selected={kind === 'TEXT'} onPress={() => setKind('TEXT')} />
-        <Chip label="📷 Photo" selected={kind === 'IMAGE'} onPress={() => setKind('IMAGE')} />
-        <Chip label="🎤 Voice" selected={kind === 'VOICE'} onPress={() => setKind('VOICE')} />
+        <Chip icon="mail" label="Card" selected={kind === 'CARD'} onPress={() => setKind('CARD')} />
+        <Chip icon="edit" label="Message" selected={kind === 'TEXT'} onPress={() => setKind('TEXT')} />
+        <Chip icon="camera" label="Photo" selected={kind === 'IMAGE'} onPress={() => setKind('IMAGE')} />
+        <Chip icon="mic" label="Voice" selected={kind === 'VOICE'} onPress={() => setKind('VOICE')} />
       </Row>
       <InlineError error={send.error} />
 
@@ -97,7 +97,7 @@ export default function SendWish() {
                   <Image source={{ uri: item.previewUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 </View>
                 <T variant="caption" center style={{ marginTop: 4 }}>
-                  {item.isPremium ? '✨ ' : ''}
+                  {item.isPremium ? '' : ''}
                   {CARD_TEMPLATE_META[item.style].label}
                 </T>
               </Pressable>
@@ -122,18 +122,18 @@ export default function SendWish() {
             <>
               <Field label="Headline" value={headline} onChangeText={setHeadline} style={{ marginTop: spacing.md }} />
               <Field label="Message" multiline value={body} onChangeText={setBody} error={fieldError(send.error, 'body')} />
-              <Button small variant="secondary" icon="🖼️" title="Add a photo" disabled={photos.length >= 3} onPress={() => void pickAndUploadImage('card').then((url) => url && setPhotos([...photos, url]))} />
+              <Button small variant="secondary" icon="image" title="Add a photo" disabled={photos.length >= 3} onPress={() => void pickAndUploadImage('card').then((url) => url && setPhotos([...photos, url]))} />
             </>
           ) : null}
         </Section>
       ) : null}
 
-      {kind === 'TEXT' ? <Field label="Your message" multiline value={body} onChangeText={setBody} placeholder="Happy birthday! 🎉" style={{ marginTop: spacing.lg }} /> : null}
+      {kind === 'TEXT' ? <Field label="Your message" multiline value={body} onChangeText={setBody} placeholder="Happy birthday!" style={{ marginTop: spacing.lg }} /> : null}
 
       {kind === 'IMAGE' ? (
         <View style={{ marginTop: spacing.lg }}>
           <Pressable onPress={() => void pickAndUploadImage('card').then((url) => url && setMediaUrl(url))} style={{ height: 220, borderRadius: radius.lg, backgroundColor: colors.surfaceMuted, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-            {mediaUrl ? <Image source={{ uri: mediaUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.textMuted}>📷 Choose a photo</T>}
+            {mediaUrl ? <Image source={{ uri: mediaUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <T color={colors.textMuted}>Choose a photo</T>}
           </Pressable>
           <Field label="Caption" value={body} onChangeText={setBody} style={{ marginTop: spacing.md }} />
         </View>
@@ -149,7 +149,7 @@ export default function SendWish() {
       <View style={{ marginTop: spacing.lg }}>
         <Toggle label="Send anonymously" value={anonymous} onChange={setAnonymous} />
       </View>
-      <Button title="Send wish" icon="💌" loading={send.isPending} disabled={!ready} onPress={() => send.mutate()} style={{ marginTop: spacing.md }} />
+      <Button title="Send wish" icon="mail" loading={send.isPending} disabled={!ready} onPress={() => send.mutate()} style={{ marginTop: spacing.md }} />
     </Screen>
   );
 }

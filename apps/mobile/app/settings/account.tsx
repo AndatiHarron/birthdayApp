@@ -60,7 +60,7 @@ export default function AccountSettings() {
 
       <Section title="Your data">
         <InlineError error={exportData.error} />
-        <Button variant="secondary" icon="📦" title="Download my data" loading={exportData.isPending} onPress={() => exportData.mutate()} />
+        <Button variant="secondary" icon="package" title="Download my data" loading={exportData.isPending} onPress={() => exportData.mutate()} />
         <Button variant="ghost" title="Privacy policy" onPress={() => void Linking.openURL(`${WEB_URL}/privacy`)} style={{ marginTop: spacing.sm }} />
         <Button variant="ghost" title="Terms of service" onPress={() => void Linking.openURL(`${WEB_URL}/terms`)} />
       </Section>

@@ -8,13 +8,14 @@ import { Avatar, Button, Card, Chip, Field, InlineError, Row, Screen, Section, T
 import { api, fieldError } from '../../src/lib/api';
 import { pickAndUploadImage } from '../../src/lib/media';
 import { colors, spacing } from '../../src/theme';
+import { interestIcon } from '../../src/lib/icons';
 
 const RELATIONSHIPS: Array<{ value: RelationshipType; label: string }> = [
-  { value: 'FAMILY', label: '👨‍👩‍👧 Family' },
-  { value: 'CLOSE_FRIEND', label: '💛 Close friend' },
-  { value: 'FRIEND', label: '👫 Friend' },
-  { value: 'PARTNER', label: '❤️ Partner' },
-  { value: 'COLLEAGUE', label: '💼 Colleague' },
+  { value: 'FAMILY', label: 'Family' },
+  { value: 'CLOSE_FRIEND', label: 'Close friend' },
+  { value: 'FRIEND', label: 'Friend' },
+  { value: 'PARTNER', label: 'Partner' },
+  { value: 'COLLEAGUE', label: 'Colleague' },
   { value: 'OTHER', label: 'Other' },
 ];
 
@@ -122,7 +123,7 @@ export default function BirthdayForm() {
       <Section title="Interests">
         <Row wrap>
           {INTEREST_CATALOG.map((interest) => (
-            <Chip key={interest.slug} label={interest.label} emoji={interest.emoji} selected={interests.includes(interest.slug)} onPress={() => setInterests(toggle(interests, interest.slug))} />
+            <Chip key={interest.slug} label={interest.label} icon={interestIcon(interest.slug)} selected={interests.includes(interest.slug)} onPress={() => setInterests(toggle(interests, interest.slug))} />
           ))}
         </Row>
       </Section>
@@ -140,7 +141,7 @@ export default function BirthdayForm() {
 
       <Section title="Notes">
         <Field label="Private notes" multiline value={notes} onChangeText={setNotes} placeholder="Shoe size 42, loves dark chocolate…" />
-        <Toggle label="⭐ Favorite" value={isFavorite} onChange={setFavorite} />
+        <Toggle label="Favorite" value={isFavorite} onChange={setFavorite} />
       </Section>
 
       <Button title={id ? 'Save changes' : 'Add birthday'} loading={save.isPending} disabled={!name.trim()} onPress={() => save.mutate()} style={{ marginTop: spacing.xl }} />

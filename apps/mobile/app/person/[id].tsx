@@ -4,10 +4,11 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { WishlistItemRow, money } from '../../src/components/gifting';
-import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, InfoRow, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { useRealtimeRoom } from '../../src/lib/realtime';
 import { colors, spacing } from '../../src/theme';
+import { interestIcon } from '../../src/lib/icons';
 
 /** Someone's profile and wishlist, as a gifter sees it (spec §5, §10, §13). */
 export default function Person() {
@@ -47,25 +48,25 @@ export default function Person() {
         </T>
         <T color={colors.textMuted}>@{person.username}</T>
         {person.birthday ? (
-          <T variant="label" color={colors.pink} style={{ marginTop: spacing.sm }}>
-            🎂 {person.birthday.label} · {person.birthday.countdown.label}
+          <T variant="label" color={colors.accent} style={{ marginTop: spacing.sm }}>
+            {person.birthday.label} · {person.birthday.countdown.label}
             {person.age != null ? ` · ${person.age} years` : ''}
           </T>
         ) : null}
         {person.bio ? <T style={{ marginTop: spacing.sm }} center>{person.bio}</T> : null}
         <Row wrap style={{ marginTop: spacing.md, justifyContent: 'center' }}>
           {person.interests.map((interest) => (
-            <Badge key={interest.slug} label={`${interest.emoji ?? ''} ${interest.label}`} tone="info" />
+            <Badge key={interest.slug} icon={interestIcon(interest.slug)} label={interest.label} tone="info" />
           ))}
         </Row>
         {!person.isSelf ? (
           <Row style={{ marginTop: spacing.lg }} wrap>
-            {!friendship ? <Button small title="Add friend" icon="➕" loading={friendRequest.isPending} onPress={() => friendRequest.mutate()} /> : null}
+            {!friendship ? <Button small title="Add friend" icon="plus" loading={friendRequest.isPending} onPress={() => friendRequest.mutate()} /> : null}
             {friendship?.status === 'PENDING' ? <Badge label={friendship.outgoing ? 'Request sent' : 'Wants to connect'} tone="gold" /> : null}
             {friendship?.status === 'PENDING' && !friendship.outgoing ? <Button small title="Respond" onPress={() => router.push('/friends')} /> : null}
-            <Button small variant="secondary" icon="💌" title="Wish" onPress={() => router.push({ pathname: '/wish/send', params: { userId: person.id, name: person.displayName } })} />
-            <Button small variant="secondary" icon="🎁" title="Gift" onPress={() => router.push({ pathname: '/send-gift', params: { userId: person.id, name: person.displayName } })} />
-            {friendship?.status === 'ACCEPTED' ? <Button small variant="secondary" icon="💬" title="Chat" onPress={() => void api.post<{ id: string }>('/conversations', { memberIds: [person.id] }).then((conversation) => router.push(`/chat/${conversation.id}`)).catch((error) => Alert.alert('Chat unavailable', errorMessage(error)))} /> : null}
+            <Button small variant="secondary" icon="mail" title="Wish" onPress={() => router.push({ pathname: '/wish/send', params: { userId: person.id, name: person.displayName } })} />
+            <Button small variant="secondary" icon="gift" title="Gift" onPress={() => router.push({ pathname: '/send-gift', params: { userId: person.id, name: person.displayName } })} />
+            {friendship?.status === 'ACCEPTED' ? <Button small variant="secondary" icon="chat" title="Chat" onPress={() => void api.post<{ id: string }>('/conversations', { memberIds: [person.id] }).then((conversation) => router.push(`/chat/${conversation.id}`)).catch((error) => Alert.alert('Chat unavailable', errorMessage(error)))} /> : null}
           </Row>
         ) : null}
       </Card>
@@ -74,23 +75,23 @@ export default function Person() {
         <Section title="Gift preferences">
           <Card>
             {Object.entries(person.giftPreferences.sizes).map(([item, size]) => (
-              <T key={item}>📏 {item}: {size}</T>
+              <InfoRow key={item} icon="ruler">{item}: {size}</InfoRow>
             ))}
-            {person.giftPreferences.favoriteColors.length ? <T>🎨 Loves {person.giftPreferences.favoriteColors.join(', ')}</T> : null}
-            {person.giftPreferences.favoriteBrands.length ? <T>🏷️ Brands: {person.giftPreferences.favoriteBrands.join(', ')}</T> : null}
-            {person.giftPreferences.dislikes.length ? <T>🚫 Not a fan of {person.giftPreferences.dislikes.join(', ')}</T> : null}
-            {person.giftPreferences.allergies.length ? <T>⚠️ Allergies: {person.giftPreferences.allergies.join(', ')}</T> : null}
-            {person.giftPreferences.notes ? <T>📝 {person.giftPreferences.notes}</T> : null}
+            {person.giftPreferences.favoriteColors.length ? <InfoRow icon="palette">Loves {person.giftPreferences.favoriteColors.join(', ')}</InfoRow> : null}
+            {person.giftPreferences.favoriteBrands.length ? <InfoRow icon="tag">Brands: {person.giftPreferences.favoriteBrands.join(', ')}</InfoRow> : null}
+            {person.giftPreferences.dislikes.length ? <InfoRow icon="ban">Not a fan of {person.giftPreferences.dislikes.join(', ')}</InfoRow> : null}
+            {person.giftPreferences.allergies.length ? <InfoRow icon="alert">Allergies: {person.giftPreferences.allergies.join(', ')}</InfoRow> : null}
+            {person.giftPreferences.notes ? <InfoRow icon="edit">{person.giftPreferences.notes}</InfoRow> : null}
           </Card>
         </Section>
       ) : null}
 
-      <Section title="🎁 Wishlist" action={!person.isSelf ? <Button small variant="ghost" title="✨ Ideas" onPress={() => router.push({ pathname: '/gift-finder', params: { userId: person.id } })} /> : undefined}>
-        {person.wishlistAccess === 'HIDDEN' ? <EmptyState emoji="🔒" title="This wishlist is private" message={friendship?.status === 'ACCEPTED' ? undefined : 'Become friends to see it.'} /> : null}
-        {person.wishlistAccess === 'NONE' ? <EmptyState emoji="📝" title="No wishlist yet" /> : null}
+      <Section icon="gift" title="Wishlist" action={!person.isSelf ? <Button small variant="ghost" icon="sparkles" title="Ideas" onPress={() => router.push({ pathname: '/gift-finder', params: { userId: person.id } })} /> : undefined}>
+        {person.wishlistAccess === 'HIDDEN' ? <EmptyState icon="lock" title="This wishlist is private" message={friendship?.status === 'ACCEPTED' ? undefined : 'Become friends to see it.'} /> : null}
+        {person.wishlistAccess === 'NONE' ? <EmptyState icon="edit" title="No wishlist yet" /> : null}
         {wishlist.isLoading ? <Loading /> : null}
         {wishlist.error ? <ErrorState error={wishlist.error} /> : null}
-        {wishlist.data && wishlist.data.items.length === 0 ? <EmptyState emoji="🎈" title="Nothing on the list yet" /> : null}
+        {wishlist.data && wishlist.data.items.length === 0 ? <EmptyState icon="party" title="Nothing on the list yet" /> : null}
         {wishlist.data?.items.map((item) => (
           <GifterItem key={item.id} item={item} isOwner={person.isSelf} ownerName={person.displayName} ownerId={person.id} onChanged={() => void wishlist.refetch()} />
         ))}
@@ -108,7 +109,7 @@ function GifterItem({ item, isOwner, ownerName, ownerId, onChanged }: { item: Wi
     onSuccess: () => {
       setExpanded(false);
       onChanged();
-      Alert.alert('🎁 Reserved!', `Nobody else can claim “${item.name}” now. ${ownerName.split(' ')[0]} won’t see that you did.`);
+      Alert.alert('Reserved!', `Nobody else can claim “${item.name}” now. ${ownerName.split(' ')[0]} won’t see that you did.`);
     },
     onError: (error) => {
       onChanged();
@@ -136,12 +137,12 @@ function GifterItem({ item, isOwner, ownerName, ownerId, onChanged }: { item: Wi
           <View>
             <Toggle label="Stay anonymous to other gifters" value={anonymous} onChange={setAnonymous} />
             <Row wrap>
-              <Button small icon="🎁" title="I’ll get this" loading={reserve.isPending} onPress={() => reserve.mutate()} />
+              <Button small icon="gift" title="I’ll get this" loading={reserve.isPending} onPress={() => reserve.mutate()} />
               {item.priceMinor && item.priceMinor >= 500_000 ? (
                 <Button
                   small
                   variant="secondary"
-                  icon="👥"
+                  icon="users"
                   title="Chip in together"
                   onPress={() => router.push({ pathname: '/group-gift/new', params: { wishlistItemId: item.id, title: item.name, target: String(item.priceMinor), currency: item.currency, beneficiaryUserId: ownerId, name: ownerName } })}
                 />
@@ -150,7 +151,7 @@ function GifterItem({ item, isOwner, ownerName, ownerId, onChanged }: { item: Wi
             </Row>
           </View>
         ) : (
-          <Button small icon="🎁" title="I’ll get this" onPress={() => setExpanded(true)} style={{ alignSelf: 'flex-start' }} />
+          <Button small icon="gift" title="I’ll get this" onPress={() => setExpanded(true)} style={{ alignSelf: 'flex-start' }} />
         )
       }
     />

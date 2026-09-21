@@ -18,6 +18,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { errorMessage } from '../lib/api';
 import { colors, gradients, radius, shadow, spacing, type } from '../theme';
+import { Icon, type IconName } from './Icon';
+
+export { Icon, type IconName } from './Icon';
 
 /* ------------------------------ typography ------------------------------ */
 
@@ -86,11 +89,26 @@ export function Row({ children, gap = spacing.sm, style, wrap }: { children: Rea
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, wrap && { flexWrap: 'wrap' }, style]}>{children}</View>;
 }
 
-export function Section({ title, action, children, style }: { title: string; action?: ReactNode; children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function Section({
+  title,
+  icon,
+  action,
+  children,
+  style,
+}: {
+  title: string;
+  icon?: IconName;
+  action?: ReactNode;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
   return (
     <View style={[{ marginTop: spacing.xl }, style]}>
       <Row style={{ justifyContent: 'space-between', marginBottom: spacing.md }}>
-        <T variant="heading">{title}</T>
+        <Row gap={spacing.sm} style={{ flex: 1 }}>
+          {icon ? <Icon name={icon} size={18} color={colors.brand} /> : null}
+          <T variant="heading" style={{ flexShrink: 1 }}>{title}</T>
+        </Row>
         {action}
       </Row>
       {children}
@@ -126,21 +144,16 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   loading?: boolean;
   disabled?: boolean;
-  icon?: string;
+  icon?: IconName;
   small?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const isDisabled = disabled || loading;
+  const tint = variant === 'primary' ? colors.white : variant === 'danger' ? colors.danger : colors.brand;
   const label = (
     <Row gap={6} style={{ justifyContent: 'center' }}>
-      {loading ? <ActivityIndicator color={variant === 'primary' ? colors.white : colors.brand} size="small" /> : icon ? <Text style={{ fontSize: small ? 14 : 16 }}>{icon}</Text> : null}
-      <Text
-        style={[
-          type.label,
-          { fontSize: small ? 13 : 15 },
-          { color: variant === 'primary' ? colors.white : variant === 'danger' ? colors.danger : colors.brand },
-        ]}
-      >
+      {loading ? <ActivityIndicator color={tint} size="small" /> : icon ? <Icon name={icon} size={small ? 15 : 18} color={tint} /> : null}
+      <Text numberOfLines={1} style={[type.label, { fontSize: small ? 13 : 15, color: tint }]}>
         {title}
       </Text>
     </Row>
@@ -174,19 +187,38 @@ export function Button({
   );
 }
 
-export function Chip({ label, selected, onPress, emoji }: { label: string; selected?: boolean; onPress?: () => void; emoji?: string | null }) {
+export function Chip({ label, selected, onPress, icon }: { label: string; selected?: boolean; onPress?: () => void; icon?: IconName | null }) {
+  const tint = selected ? colors.white : colors.text;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={[styles.chip, selected && { backgroundColor: colors.brand, borderColor: colors.brand }]}
+      style={[styles.chip, selected && { backgroundColor: colors.text, borderColor: colors.text }]}
     >
-      <Text style={[type.label, { color: selected ? colors.white : colors.text }]}>
-        {emoji ? `${emoji} ` : ''}
-        {label}
-      </Text>
+      <Row gap={6}>
+        {icon ? <Icon name={icon} size={14} color={selected ? colors.white : colors.textMuted} /> : null}
+        <Text style={[type.label, { color: tint }]}>{label}</Text>
+      </Row>
     </Pressable>
+  );
+}
+
+/** An icon in a soft rounded square: list rows, menu items, feature tiles. */
+export function IconTile({ name, size = 40, tone = 'brand' }: { name: IconName; size?: number; tone?: 'brand' | 'accent' | 'muted' | 'success' | 'danger' | 'gold' | 'onDark' }) {
+  const [background, foreground] = {
+    brand: [colors.brandSoft, colors.brand],
+    accent: [colors.accentSoft, colors.accent],
+    muted: [colors.surfaceMuted, colors.textMuted],
+    success: [colors.successSoft, colors.success],
+    danger: [colors.dangerSoft, colors.danger],
+    gold: [colors.goldSoft, colors.gold],
+    onDark: ['rgba(255,255,255,0.16)', colors.white],
+  }[tone];
+  return (
+    <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: background, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={name} size={Math.round(size * 0.5)} color={foreground} />
+    </View>
   );
 }
 
@@ -238,7 +270,7 @@ export function Toggle({ label, value, onChange, description }: { label: string;
 
 /* --------------------------------- media --------------------------------- */
 
-const AVATAR_TINTS = ['#F1E8FF', '#FCE7F3', '#DBEAFE', '#D1FAE5', '#FEF3C7'];
+const AVATAR_TINTS = ['#E8EAFE', '#E0F2FE', '#DCFCE7', '#FEF3C7', '#EEF1F5'];
 
 export function Avatar({ name, uri, size = 44 }: { name: string; uri?: string | null; size?: number }) {
   const initials = name
@@ -254,14 +286,15 @@ export function Avatar({ name, uri, size = 44 }: { name: string; uri?: string | 
   }
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontWeight: '700', color: colors.brandDark, fontSize: size * 0.38 }}>{initials || '🎂'}</Text>
+      {initials ? <Text style={{ fontWeight: '700', color: colors.text, fontSize: size * 0.38 }}>{initials}</Text> : <Icon name="user" size={size * 0.5} color={colors.textMuted} />}
     </View>
   );
 }
 
-export function Badge({ label, tone = 'brand' }: { label: string; tone?: 'brand' | 'success' | 'danger' | 'gold' | 'muted' | 'info' }) {
+export function Badge({ label, tone = 'brand', icon }: { label: string; tone?: 'brand' | 'accent' | 'success' | 'danger' | 'gold' | 'muted' | 'info'; icon?: IconName }) {
   const palette = {
     brand: [colors.brandSoft, colors.brandDark],
+    accent: [colors.accentSoft, colors.accent],
     success: [colors.successSoft, colors.success],
     danger: [colors.dangerSoft, colors.danger],
     gold: [colors.goldSoft, '#92400E'],
@@ -269,7 +302,8 @@ export function Badge({ label, tone = 'brand' }: { label: string; tone?: 'brand'
     info: [colors.infoSoft, colors.info],
   }[tone];
   return (
-    <View style={{ backgroundColor: palette[0], paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start' }}>
+    <View style={{ backgroundColor: palette[0], paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      {icon ? <Icon name={icon} size={12} color={palette[1]} strokeWidth={2.4} /> : null}
       <Text style={[type.caption, { color: palette[1], fontWeight: '700' }]}>{label}</Text>
     </View>
   );
@@ -298,10 +332,12 @@ export function SkeletonCard({ height = 88 }: { height?: number }) {
   return <View style={[styles.card, { height, backgroundColor: colors.surfaceMuted, borderColor: colors.surfaceMuted, marginBottom: spacing.md }]} />;
 }
 
-export function EmptyState({ emoji, title, message, action }: { emoji: string; title: string; message?: string; action?: ReactNode }) {
+export function EmptyState({ icon, title, message, action }: { icon: IconName; title: string; message?: string; action?: ReactNode }) {
   return (
     <View style={{ alignItems: 'center', padding: spacing.xl, gap: spacing.sm }}>
-      <Text style={{ fontSize: 44 }}>{emoji}</Text>
+      <View style={{ marginBottom: spacing.xs }}>
+        <IconTile name={icon} size={56} tone="muted" />
+      </View>
       <T variant="heading" center>
         {title}
       </T>
@@ -318,7 +354,7 @@ export function EmptyState({ emoji, title, message, action }: { emoji: string; t
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   return (
     <View style={{ alignItems: 'center', padding: spacing.xl, gap: spacing.sm }}>
-      <Text style={{ fontSize: 36 }}>😕</Text>
+      <IconTile name="alert" size={48} tone="muted" />
       <T color={colors.textMuted} center>
         {errorMessage(error)}
       </T>
@@ -333,6 +369,20 @@ export function InlineError({ error }: { error: unknown }) {
     <View style={{ backgroundColor: colors.dangerSoft, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md }}>
       <T color={colors.danger}>{errorMessage(error)}</T>
     </View>
+  );
+}
+
+/** A detail line with a leading icon: phone, date, location, delivery. */
+export function InfoRow({ icon, children, color = colors.text, style }: { icon: IconName; children: ReactNode; color?: string; style?: StyleProp<ViewStyle> }) {
+  return (
+    <Row gap={spacing.sm} style={[{ alignItems: 'flex-start', marginTop: 6 }, style]}>
+      <View style={{ paddingTop: 2 }}>
+        <Icon name={icon} size={15} color={colors.textMuted} />
+      </View>
+      <T color={color} style={{ flex: 1 }}>
+        {children}
+      </T>
+    </Row>
   );
 }
 

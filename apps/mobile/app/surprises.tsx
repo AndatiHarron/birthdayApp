@@ -13,10 +13,10 @@ export default function Surprises() {
   return (
     <Screen refreshing={surprises.isRefetching} onRefresh={() => { void surprises.refetch(); void gifts.refetch(); }}>
       <Stack.Screen options={{ title: 'Surprises & group gifts' }} />
-      <Section title="🤫 Surprises" style={{ marginTop: 0 }}>
+      <Section icon="secret" title="Surprises" style={{ marginTop: 0 }}>
         {surprises.isLoading ? <Loading /> : null}
         {surprises.error ? <ErrorState error={surprises.error} /> : null}
-        {surprises.data?.length === 0 ? <EmptyState emoji="🤫" title="No surprises yet" message="Open a friend’s birthday and tap “Plan a surprise”." /> : null}
+        {surprises.data?.length === 0 ? <EmptyState icon="secret" title="No surprises yet" message="Open a friend’s birthday and tap “Plan a surprise”." /> : null}
         {surprises.data?.map((surprise) => (
           <Card key={surprise.id} onPress={() => router.push(`/surprise/${surprise.id}`)} style={{ marginBottom: spacing.md }}>
             <Row style={{ justifyContent: 'space-between' }}>
@@ -27,7 +27,7 @@ export default function Surprises() {
           </Card>
         ))}
       </Section>
-      <Section title="👥 Group gifts">
+      <Section icon="users" title="Group gifts">
         {gifts.data?.length === 0 ? <T color={colors.textMuted}>No group gifts yet.</T> : null}
         {gifts.data?.map((gift) => (
           <Card key={gift.id} onPress={() => router.push(`/group-gift/${gift.id}`)} style={{ marginBottom: spacing.md }}>

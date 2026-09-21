@@ -42,3 +42,6 @@ apps/api/src/generated/
 # embedded test database (vitest)
 .pg-test/
 .pg-dev/
+
+# test upload storage
+apps/api/.test-storage/

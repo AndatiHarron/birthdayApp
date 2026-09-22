@@ -116,4 +116,4 @@ These are not built yet, so skip them when testing:
 - Google and Apple sign-in buttons in the mobile app. The server side is ready.
 - Video thank-yous, and stickers or music in the card editor.
 - A GIF search picker (Giphy or Tenor): GIFs work today by picking one from your photos, which then animates in the wall. A search picker needs a provider API key.
-- Push notifications on real devices. They need an EAS project ID and, on Android, a development build: Expo Go has not supported remote push on Android since SDK 53. In-app notifications (the bell) work everywhere. See [NOTIFICATIONS.md](NOTIFICATIONS.md).
+- Push notifications on real devices: run `npx eas-cli init` in apps/mobile first (see [DEPLOYMENT.md](DEPLOYMENT.md#8-mobile-app-android-and-ios)), then install a dev build or APK. Expo Go on Android has not supported remote push since SDK 53; in-app notifications (the bell) work everywhere.

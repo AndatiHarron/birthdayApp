@@ -95,27 +95,51 @@ Upload `apps/admin/dist/` to a static host (Netlify, Vercel, Cloudflare Pages, S
 
 ## 8. Mobile app (Android and iOS)
 
-From `apps/mobile`:
+`eas.json` is in the repo with three build profiles. What is missing is your own Expo account and project id, which only you can create:
 
 ```bash
-npm install -g eas-cli
-eas login
-eas init                           # sets expo.extra.eas.projectId in app.json
-eas build:configure                # creates eas.json (not in the repo yet)
+cd apps/mobile
+npx eas-cli login                  # your Expo account (free)
+npx eas-cli init                   # writes expo.extra.eas.projectId into app.json — commit that
 ```
 
-In `eas.json`, set each build profile's `env.EXPO_PUBLIC_API_URL` to the production API URL. Then:
+Then point the builds at your API. In [`apps/mobile/eas.json`](../apps/mobile/eas.json) replace the placeholder URLs:
+
+| Profile | `EXPO_PUBLIC_API_URL` should be | Produces |
+|---|---|---|
+| `development` | your computer's LAN IP, e.g. `http://192.168.1.20:4000` | A dev build: like Expo Go, but with your own native modules |
+| `preview` | your deployed API, e.g. `https://api.yourdomain.com` | An installable APK for testers |
+| `production` | your deployed API | An `.aab` for Google Play, and a store build for iOS |
+
+### Builds
 
 ```bash
-eas build --platform android --profile production
-eas build --platform ios --profile production
-eas submit --platform android      # Google Play Console account ($25 one-off)
-eas submit --platform ios          # Apple Developer Program ($99/year)
+npm run build:android              # preview APK — install on any Android phone
+npm run build:android:prod         # .aab for Google Play
+npm run build:ios                  # needs an Apple Developer account
+npm run build:dev                  # dev build, for testing native modules locally
 ```
 
-The app identifiers are `app.birthday.gifting` (iOS bundle ID and Android package) and the deep-link scheme is `bday`. **Change them to your own before the first store upload**, because they can't be changed afterwards.
+Builds run on Expo's servers, so this works from Windows, including for iOS.
 
-For small JavaScript-only fixes after release, `eas update` pushes over-the-air updates without a store review.
+**What each platform costs and allows:**
+
+- **Android:** free to build and install. `npm run build:android` gives you a link to an APK anyone can install directly. Google Play needs a one-off $25 account.
+- **iOS:** installing on a real iPhone needs the **Apple Developer Program ($99/year)** — that is Apple's rule, not Expo's. Without it, iPhone testing means Expo Go on the same Wi-Fi as your computer.
+
+### Over-the-air updates
+
+After a build is installed, JavaScript-only changes ship without a new build or store review:
+
+```bash
+npm run update                     # publishes to the preview branch
+```
+
+Native changes — a new Expo SDK, a new native module, changed permissions — still need a rebuild.
+
+### Before the first store upload
+
+The identifiers are `app.birthday.gifting` (iOS bundle id and Android package) and the deep-link scheme is `bday`. **Change them to your own domain before the first upload**, because they cannot be changed afterwards.
 
 ## 9. Before going live
 

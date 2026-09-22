@@ -1,4 +1,5 @@
 import {
+  GIFT_SHELVES,
   formatMoney,
   isSupportedCurrency,
   type ActivityItemDto,
@@ -11,6 +12,8 @@ import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { toActor } from '../mappers/user.mapper';
 import { matchGifts } from './ai.service';
+import { listProducts } from './catalog.service';
+import { listCelebratingToday } from './global.service';
 import { listUpcomingBirthdays, myBirthdayToday } from './birthday.service';
 import { getPublicProfile } from './user.service';
 import { getUserWishlist } from './wishlist.service';
@@ -201,6 +204,57 @@ async function buildActivity(userId: string): Promise<ActivityItemDto[]> {
   return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 15);
 }
 
+/** Curated marketplace rows. Keeps the home screen worth scrolling before you have friends on it. */
+async function buildShelves(): Promise<HomeFeedResponse['shelves']> {
+  const keys = ['popular', 'under_5000', 'premium'] as const;
+  const rows = await Promise.all(
+    keys.map(async (key) => {
+      const shelf = GIFT_SHELVES.find((entry) => entry.key === key);
+      const products = await listProducts({ shelf: key, limit: 10, sort: 'POPULAR' } as never);
+      return { key, label: shelf?.label ?? key, products: products.items };
+    }),
+  );
+  return rows.filter((row) => row.products.length > 0);
+}
+
+/** Birthday photos from you and the friends who shared them. */
+async function buildMoments(userId: string): Promise<HomeFeedResponse['moments']> {
+  const friends = await friendIdsOf(userId);
+  const media = await prisma.memoryMedia.findMany({
+    where: {
+      memory: {
+        OR: [{ userId }, { userId: { in: friends }, visibility: { not: 'PRIVATE' } }],
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 12,
+    select: {
+      id: true,
+      url: true,
+      kind: true,
+      caption: true,
+      memory: {
+        select: {
+          celebrationYear: true,
+          user: { select: { id: true, username: true, profile: { select: { displayName: true, avatarUrl: true } } } },
+        },
+      },
+    },
+  });
+  return media.map((row) => ({
+    id: row.id,
+    url: row.url,
+    kind: row.kind,
+    caption: row.caption,
+    celebrationYear: row.memory.celebrationYear,
+    owner: {
+      id: row.memory.user.id,
+      displayName: row.memory.user.profile?.displayName ?? row.memory.user.username,
+      avatarUrl: row.memory.user.profile?.avatarUrl ?? null,
+    },
+  }));
+}
+
 export async function getHomeFeed(userId: string): Promise<HomeFeedResponse> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
@@ -256,6 +310,32 @@ export async function getHomeFeed(userId: string): Promise<HomeFeedResponse> {
     [],
   );
 
+  const [globalToday, shelves, moments] = await Promise.all([
+    safely(
+      'globalToday',
+      async () => {
+        // Throws for anyone who cannot browse global birthdays (minors, unverified).
+        const feed = await listCelebratingToday(userId, { limit: 12 });
+        return {
+          total: feed.totalCelebrating,
+          countries: feed.countries,
+          people: feed.items.map((person) => ({
+            userId: person.userId,
+            displayName: person.displayName,
+            avatarUrl: person.avatarUrl,
+            city: person.city,
+            countryCode: person.countryCode,
+            firstCelebration: person.firstCelebration,
+            cheeredByMe: person.cheeredByMe,
+          })),
+        };
+      },
+      null,
+    ),
+    safely('shelves', () => buildShelves(), []),
+    safely('moments', () => buildMoments(userId), []),
+  ]);
+
   return {
     greeting: `${greetingFor(hour)}, ${(user.profile?.displayName ?? user.username).split(' ')[0]}`,
     user: { id: user.id, displayName: user.profile?.displayName ?? user.username, avatarUrl: user.profile?.avatarUrl ?? null },
@@ -265,5 +345,8 @@ export async function getHomeFeed(userId: string): Promise<HomeFeedResponse> {
     friendHighlights,
     activity,
     spotlight,
+    globalToday,
+    shelves,
+    moments,
   };
 }

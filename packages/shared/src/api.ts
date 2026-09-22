@@ -857,6 +857,16 @@ export interface HomeFeedResponse {
   activity: ActivityItemDto[];
   /** The "magical" prompt from spec §65, when there is a good one to show. */
   spotlight: SpotlightDto | null;
+  /** People celebrating right now anywhere; null when this user cannot browse them. */
+  globalToday: {
+    total: number;
+    countries: number;
+    people: Array<{ userId: string; displayName: string; avatarUrl: string | null; city: string | null; countryCode: string; firstCelebration: boolean; cheeredByMe: boolean }>;
+  } | null;
+  /** Marketplace rows, so the home screen has something to browse from day one. */
+  shelves: Array<{ key: string; label: string; products: ProductDto[] }>;
+  /** Recent birthday photos from you and your friends. */
+  moments: Array<{ id: string; url: string; kind: 'IMAGE' | 'VIDEO'; caption: string | null; celebrationYear: number; owner: { id: string; displayName: string; avatarUrl: string | null } }>;
 }
 
 export interface SpotlightDto {

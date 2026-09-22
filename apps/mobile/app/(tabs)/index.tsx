@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { BirthdayCard, ProductCard } from '../../src/components/gifting';
-import { Avatar, Button, Card, EmptyState, ErrorState, Icon, IconTile, Row, Screen, Section, SkeletonCard, T } from '../../src/components/ui';
+import { Avatar, Button, Card, EmptyState, ErrorState, Icon, IconTile, Row, Screen, Section, SkeletonCard, StoryAvatar, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { colors, gradients, radius, spacing } from '../../src/theme';
 
@@ -93,18 +93,22 @@ export default function Home() {
       ) : null}
 
       {data && data.friendHighlights.length > 0 ? (
-        <Section icon="heart" title="Your Friends">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+        <Section icon="heart" title="Your people">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingVertical: 4 }}>
             {data.friendHighlights.map((highlight) => (
-              <Pressable key={highlight.user.id} onPress={() => router.push(`/person/${highlight.user.id}`)} style={{ width: 96, alignItems: 'center' }}>
-                <Avatar name={highlight.user.displayName} uri={highlight.user.avatarUrl} size={64} />
-                <T variant="label" numberOfLines={1} style={{ marginTop: 6 }}>
-                  {highlight.user.displayName.split(' ')[0]}
-                </T>
-                <T variant="caption" color={colors.textMuted} numberOfLines={2} center>
+              <View key={highlight.user.id} style={{ width: 84, alignItems: 'center' }}>
+                <StoryAvatar
+                  name={highlight.user.displayName}
+                  uri={highlight.user.avatarUrl}
+                  size={72}
+                  tone={/today/i.test(highlight.detail) ? 'today' : /day|week/i.test(highlight.detail) ? 'soon' : 'none'}
+                  label={highlight.user.displayName.split(' ')[0]}
+                  onPress={() => router.push(`/person/${highlight.user.id}`)}
+                />
+                <T variant="caption" color={colors.textFaint} numberOfLines={1} center style={{ width: 84 }}>
                   {highlight.detail}
                 </T>
-              </Pressable>
+              </View>
             ))}
           </ScrollView>
         </Section>

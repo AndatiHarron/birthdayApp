@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 import { api, errorMessage } from './api';
 
-type Kind = 'avatar' | 'wishlist' | 'card' | 'memory' | 'chat' | 'wish';
+type Kind = 'avatar' | 'cover' | 'wishlist' | 'card' | 'memory' | 'chat' | 'wish';
 
 export interface PickedMedia {
   url: string;

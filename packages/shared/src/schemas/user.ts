@@ -35,6 +35,7 @@ export const updateProfileSchema = z
     username: usernameSchema.optional(),
     bio: noteSchema(LIMITS.maxBioLength),
     avatarUrl: urlSchema.nullish(),
+    coverUrl: urlSchema.nullish(),
     birthday: birthdayInputSchema.optional(),
     interests: interestSlugsSchema.optional(),
     giftPreferences: giftPreferencesSchema.partial().optional(),

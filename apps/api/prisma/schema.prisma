@@ -462,6 +462,8 @@ model Profile {
 
   displayName String
   avatarUrl   String?
+  /// Wide header image on the profile and public page.
+  coverUrl    String?
   bio         String?
 
   /// The user's own birthday. Month/day are required once onboarding is done.

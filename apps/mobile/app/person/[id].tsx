@@ -4,10 +4,10 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { WishlistItemRow, money } from '../../src/components/gifting';
-import { Avatar, Badge, Button, Card, EmptyState, ErrorState, InfoRow, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
+import { Avatar, Badge, Button, Card, CoverHeader, EmptyState, ErrorState, InfoRow, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
 import { api, errorMessage } from '../../src/lib/api';
 import { useRealtimeRoom } from '../../src/lib/realtime';
-import { colors, spacing } from '../../src/theme';
+import { colors, radius, spacing } from '../../src/theme';
 import { interestIcon } from '../../src/lib/icons';
 
 /** Someone's profile and wishlist, as a gifter sees it (spec §5, §10, §13). */
@@ -41,20 +41,34 @@ export default function Person() {
   return (
     <Screen refreshing={wishlist.isRefetching} onRefresh={() => { void profile.refetch(); void wishlist.refetch(); }}>
       <Stack.Screen options={{ title: person.displayName }} />
-      <Card style={{ alignItems: 'center' }}>
-        <Avatar name={person.displayName} uri={person.avatarUrl} size={88} />
-        <T variant="title" style={{ marginTop: spacing.md }}>
-          {person.displayName}
-        </T>
+      <CoverHeader name={person.displayName} coverUrl={person.coverUrl} avatarUrl={person.avatarUrl} height={150}>
+        {person.birthday ? (
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              backgroundColor: person.birthday.countdown.isToday ? colors.accent : 'rgba(255,255,255,0.22)',
+              borderRadius: radius.pill,
+              paddingHorizontal: 12,
+              paddingVertical: 5,
+            }}
+          >
+            <T variant="label" color={colors.white}>
+              {person.birthday.countdown.isToday ? 'Birthday today' : person.birthday.countdown.label}
+            </T>
+          </View>
+        ) : null}
+      </CoverHeader>
+      <Card>
+        <T variant="title">{person.displayName}</T>
         <T color={colors.textMuted}>@{person.username}</T>
         {person.birthday ? (
           <T variant="label" color={colors.accent} style={{ marginTop: spacing.sm }}>
-            {person.birthday.label} · {person.birthday.countdown.label}
+            {person.birthday.label}
             {person.age != null ? ` · ${person.age} years` : ''}
           </T>
         ) : null}
-        {person.bio ? <T style={{ marginTop: spacing.sm }} center>{person.bio}</T> : null}
-        <Row wrap style={{ marginTop: spacing.md, justifyContent: 'center' }}>
+        {person.bio ? <T style={{ marginTop: spacing.sm }}>{person.bio}</T> : null}
+        <Row wrap style={{ marginTop: spacing.md }}>
           {person.interests.map((interest) => (
             <Badge key={interest.slug} icon={interestIcon(interest.slug)} label={interest.label} tone="info" />
           ))}

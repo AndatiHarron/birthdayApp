@@ -2,11 +2,12 @@ import type { CurrentUser } from '@bday/shared';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Alert, Pressable, View } from 'react-native';
-import { Avatar, Badge, Card, Divider, Icon, type IconName, IconTile, Row, Screen, T } from '../../src/components/ui';
+import { Avatar, Badge, Button, Card, CoverHeader, Divider, Icon, type IconName, IconTile, Row, Screen, T } from '../../src/components/ui';
 import { api } from '../../src/lib/api';
 import { useAuth } from '../../src/lib/auth';
+import { pickAndUploadImage } from '../../src/lib/media';
 import { unregisterPushToken } from '../../src/lib/push';
-import { colors, spacing } from '../../src/theme';
+import { colors, radius, spacing } from '../../src/theme';
 
 const LINKS: Array<{ section: string; items: Array<{ icon: IconName; label: string; href: string }> }> = [
   {
@@ -43,16 +44,41 @@ const LINKS: Array<{ section: string; items: Array<{ icon: IconName; label: stri
 ];
 
 export default function Profile() {
-  const { user: authUser, signOut } = useAuth();
+  const { user: authUser, setUser, signOut } = useAuth();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api.get<CurrentUser>('/users/me'), initialData: authUser ?? undefined });
   const user = me.data;
+
+  /** Pick a new picture and save it straight away — no separate edit screen. */
+  const changePhoto = async (kind: 'avatar' | 'cover') => {
+    const url = await pickAndUploadImage(kind, { allowsEditing: kind === 'avatar' });
+    if (!url) return;
+    const updated = await api.patch<CurrentUser>('/users/me', kind === 'avatar' ? { avatarUrl: url } : { coverUrl: url });
+    setUser(updated);
+    void me.refetch();
+  };
 
   return (
     <Screen edges={['top']} refreshing={me.isRefetching} onRefresh={() => void me.refetch()}>
       {user ? (
-        <Card>
-          <Row gap={spacing.lg}>
-            <Avatar name={user.displayName} uri={user.avatarUrl} size={72} />
+        <>
+          <CoverHeader
+            name={user.displayName}
+            coverUrl={user.coverUrl}
+            avatarUrl={user.avatarUrl}
+            onPressCover={() => void changePhoto('cover')}
+            onPressAvatar={() => void changePhoto('avatar')}
+          >
+            {user.birthday ? (
+              <Row gap={spacing.sm}>
+                <View style={{ backgroundColor: user.birthday.countdown.isToday ? colors.accent : 'rgba(255,255,255,0.22)', borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                  <T variant="label" color={colors.white}>
+                    {user.birthday.countdown.isToday ? 'Your birthday is today' : user.birthday.countdown.label}
+                  </T>
+                </View>
+              </Row>
+            ) : null}
+          </CoverHeader>
+          <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <T variant="title">{user.displayName}</T>
               <T color={colors.textMuted}>@{user.username}</T>
@@ -61,18 +87,9 @@ export default function Profile() {
                 {user.birthday ? <Badge icon="cake" label={user.birthday.label} /> : null}
               </Row>
             </View>
+            <Button small variant="secondary" icon="user" title="My profile" onPress={() => router.push(`/person/${user.id}`)} />
           </Row>
-          {user.birthday ? (
-            <T variant="label" color={colors.accent} style={{ marginTop: spacing.md }}>
-              {user.birthday.countdown.isToday ? 'It’s your birthday today!' : `Your birthday: ${user.birthday.countdown.label}`}
-            </T>
-          ) : null}
-          <Pressable onPress={() => router.push(`/person/${user.id}`)} style={{ marginTop: spacing.sm }}>
-            <T variant="label" color={colors.brand}>
-              View my public profile ›
-            </T>
-          </Pressable>
-        </Card>
+        </>
       ) : null}
 
       {LINKS.map((group) => (

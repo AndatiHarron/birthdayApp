@@ -12,6 +12,7 @@ import {
   View,
   type StyleProp,
   type TextInputProps,
+  type ImageStyle,
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
@@ -271,6 +272,149 @@ export function Toggle({ label, value, onChange, description }: { label: string;
 /* --------------------------------- media --------------------------------- */
 
 const AVATAR_TINTS = ['#E8EAFE', '#E0F2FE', '#DCFCE7', '#FEF3C7', '#EEF1F5'];
+
+/** Gradient pairs for people and things with no picture yet. */
+const MONOGRAM_GRADIENTS: Array<readonly [string, string]> = [
+  ['#4F46E5', '#7C6BF5'],
+  ['#0EA5E9', '#4F46E5'],
+  ['#EA580C', '#F59E0B'],
+  ['#059669', '#0EA5E9'],
+  ['#DB2777', '#EA580C'],
+  ['#7C3AED', '#DB2777'],
+];
+
+export function initialsOf(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/** Stable per-name gradient, so the same person always looks the same. */
+export function gradientFor(name: string): readonly [string, string] {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) hash = (hash * 31 + name.charCodeAt(index)) % 997;
+  return MONOGRAM_GRADIENTS[hash % MONOGRAM_GRADIENTS.length]!;
+}
+
+/** A photo, or a coloured monogram in its place. Fills whatever box it is given. */
+export function Photo({
+  uri,
+  name,
+  radius: corner = 0,
+  icon,
+  style,
+}: {
+  uri?: string | null;
+  name?: string;
+  radius?: number;
+  icon?: IconName;
+  style?: StyleProp<ImageStyle>;
+}) {
+  if (uri) {
+    return <Image source={{ uri }} style={[{ width: '100%', height: '100%', borderRadius: corner, backgroundColor: colors.surfaceMuted }, style]} contentFit="cover" transition={180} />;
+  }
+  const [from, to] = gradientFor(name ?? 'birthday');
+  const letters = name ? initialsOf(name) : '';
+  return (
+    <LinearGradient colors={[from, to]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: '100%', height: '100%', borderRadius: corner, alignItems: 'center', justifyContent: 'center' }}>
+      {letters ? <Text style={{ color: colors.white, fontWeight: '800', fontSize: 34, letterSpacing: 1 }}>{letters}</Text> : <Icon name={icon ?? 'gift'} size={34} color="rgba(255,255,255,0.9)" />}
+    </LinearGradient>
+  );
+}
+
+/**
+ * An avatar with a ring, the way stories are shown: warm when it is their
+ * birthday today, brand when it is close, quiet otherwise.
+ */
+export function StoryAvatar({
+  name,
+  uri,
+  size = 64,
+  tone = 'none',
+  label,
+  onPress,
+}: {
+  name: string;
+  uri?: string | null;
+  size?: number;
+  tone?: 'today' | 'soon' | 'none';
+  label?: string;
+  onPress?: () => void;
+}) {
+  const ring = tone === 'today' ? [colors.accent, '#F59E0B'] : tone === 'soon' ? [colors.brand, '#7C6BF5'] : [colors.border, colors.border];
+  const inner = size - 8;
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} style={{ width: size + 12, alignItems: 'center' }}>
+      <LinearGradient colors={ring as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: inner, height: inner, borderRadius: inner / 2, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <View style={{ width: inner - 4, height: inner - 4, borderRadius: (inner - 4) / 2, overflow: 'hidden' }}>
+            <Photo uri={uri} name={name} radius={(inner - 4) / 2} />
+          </View>
+        </View>
+      </LinearGradient>
+      {label ? (
+        <T variant="caption" numberOfLines={1} center style={{ marginTop: 6, width: size + 12 }} color={tone === 'today' ? colors.accent : colors.textMuted}>
+          {label}
+        </T>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/**
+ * The wide header image on a profile, with the avatar sitting over it. Falls
+ * back to the person's own gradient, so a profile without photos still reads
+ * as theirs.
+ */
+export function CoverHeader({
+  name,
+  coverUrl,
+  avatarUrl,
+  height = 168,
+  onPressCover,
+  onPressAvatar,
+  children,
+}: {
+  name: string;
+  coverUrl?: string | null;
+  avatarUrl?: string | null;
+  height?: number;
+  onPressCover?: () => void;
+  onPressAvatar?: () => void;
+  children?: ReactNode;
+}) {
+  const avatarSize = 96;
+  return (
+    <View style={{ marginBottom: avatarSize / 2 + spacing.sm }}>
+      <Pressable onPress={onPressCover} disabled={!onPressCover} style={{ height, borderRadius: radius.xl, overflow: 'hidden' }}>
+        <Photo uri={coverUrl} name={name} />
+        <LinearGradient colors={['transparent', 'rgba(16,24,40,0.55)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.6 }} />
+        {onPressCover ? (
+          <View style={{ position: 'absolute', top: spacing.md, right: spacing.md, backgroundColor: 'rgba(16,24,40,0.45)', borderRadius: radius.pill, padding: 8 }}>
+            <Icon name="camera" size={16} color={colors.white} />
+          </View>
+        ) : null}
+        {children ? <View style={{ position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: spacing.md }}>{children}</View> : null}
+      </Pressable>
+      <Pressable
+        onPress={onPressAvatar}
+        disabled={!onPressAvatar}
+        style={{ position: 'absolute', left: spacing.lg, bottom: -avatarSize / 2, width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, borderWidth: 4, borderColor: colors.bg, overflow: 'hidden' }}
+      >
+        <Photo uri={avatarUrl} name={name} radius={avatarSize / 2} />
+        {onPressAvatar ? (
+          <View style={{ position: 'absolute', right: 0, bottom: 0, backgroundColor: colors.brand, borderRadius: radius.pill, padding: 6, borderWidth: 2, borderColor: colors.bg }}>
+            <Icon name="camera" size={12} color={colors.white} />
+          </View>
+        ) : null}
+      </Pressable>
+    </View>
+  );
+}
 
 export function Avatar({ name, uri, size = 44 }: { name: string; uri?: string | null; size?: number }) {
   const initials = name

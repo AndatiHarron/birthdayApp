@@ -102,6 +102,8 @@ export interface CurrentUser {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  /** Wide header image for the profile. */
+  coverUrl: string | null;
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
@@ -172,6 +174,7 @@ export interface PublicProfile {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  coverUrl: string | null;
   bio: string | null;
   /** Null when the viewer is not allowed to see it. */
   birthday: BirthdayInfo | null;

@@ -18,7 +18,7 @@ import { colors, gradients, radius, shadow, spacing } from '../../src/theme';
 export default function Home() {
   const feed = useQuery({ queryKey: ['home'], queryFn: () => api.get<HomeFeedResponse>('/home') });
   const data = feed.data;
-  const next = data?.upcomingBirthdays[0] ?? null;
+  const next = data?.upcomingBirthdays?.[0] ?? null;
 
   return (
     <Screen edges={['top']} padded={false} refreshing={feed.isRefetching} onRefresh={() => void feed.refetch()}>
@@ -47,10 +47,10 @@ export default function Home() {
       {data?.myBirthdayToday ? <MyBirthdayHero counts={data.myBirthdayToday} /> : next ? <NextBirthdayHero birthday={next} /> : data ? <StartHere /> : null}
 
       {/* people, as faces */}
-      {data && data.friendHighlights.length > 0 ? (
+      {data?.friendHighlights?.length ? (
         <Row wrap={false} style={{ paddingTop: spacing.lg }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-            {data.friendHighlights.map((highlight) => (
+            {data!.friendHighlights.map((highlight) => (
               <View key={highlight.user.id} style={{ width: 84, alignItems: 'center' }}>
                 <StoryAvatar
                   name={highlight.user.displayName}
@@ -70,12 +70,12 @@ export default function Home() {
       ) : null}
 
       {/* the rest of the birthdays, as posters */}
-      {data && data.upcomingBirthdays.length > 1 ? (
+      {(data?.upcomingBirthdays?.length ?? 0) > 1 ? (
         <Rail
           title="Coming up"
           icon="cake"
           action={{ label: 'See all', onPress: () => router.push('/(tabs)/birthdays') }}
-          items={data.upcomingBirthdays.slice(1)}
+          items={data!.upcomingBirthdays.slice(1)}
           keyOf={(birthday) => birthday.id}
           render={(birthday) => <BirthdayPoster birthday={birthday} />}
         />
@@ -103,12 +103,12 @@ export default function Home() {
         />
       ) : null}
 
-      {data && data.giftIdeas.length > 0 ? (
+      {data?.giftIdeas?.length ? (
         <Rail
           title="Gift ideas for you"
           icon="gift"
           action={{ label: 'Ask AI', onPress: () => router.push('/gift-finder') }}
-          items={data.giftIdeas}
+          items={data!.giftIdeas}
           keyOf={(idea, index) => `${idea.name}-${index}`}
           render={(idea) => (
             <ProductCard
@@ -120,13 +120,13 @@ export default function Home() {
         />
       ) : null}
 
-      {data?.moments && data.moments.length > 0 ? (
+      {data?.moments?.length ? (
         <Rail
           title="Moments"
           icon="camera"
           subtitle="Photos from birthdays you were part of"
           action={{ label: 'All', onPress: () => router.push('/memories') }}
-          items={data.moments}
+          items={data!.moments}
           keyOf={(moment) => moment.id}
           render={(moment) => (
             <Pressable onPress={() => router.push('/memories')} style={{ width: 132 }}>
@@ -147,7 +147,7 @@ export default function Home() {
         />
       ) : null}
 
-      {data?.shelves.map((shelf) => (
+      {data?.shelves?.map((shelf) => (
         <Rail
           key={shelf.key}
           title={shelf.label}
@@ -159,10 +159,10 @@ export default function Home() {
         />
       ))}
 
-      {data && data.activity.length > 0 ? (
+      {data?.activity?.length ? (
         <View style={{ paddingHorizontal: spacing.lg }}>
           <Section icon="sparkles" title="Recent activity">
-            {data.activity.slice(0, 6).map((item) => (
+            {data!.activity.slice(0, 6).map((item) => (
               <Row key={item.id} gap={spacing.md} style={{ paddingVertical: spacing.sm }}>
                 <Avatar name={item.actor?.displayName ?? ''} uri={item.actor?.avatarUrl} size={38} />
                 <View style={{ flex: 1 }}>

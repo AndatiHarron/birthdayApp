@@ -54,7 +54,10 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       persistOptions={{
         persister,
         maxAge: 1000 * 60 * 60 * 24 * 7,
-        buster: 'v1',
+        // Bump whenever an API response shape changes: restored queries are
+        // whatever the server sent last time, and a screen written for the new
+        // shape will crash on the old one.
+        buster: 'v2-home-rows',
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => query.state.status === 'success' && PERSISTED_ROOTS.has(String(query.queryKey[0])),
         },

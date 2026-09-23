@@ -1,13 +1,14 @@
-import { CARD_TEMPLATE_META, type CardTemplateDto } from '@bday/shared';
+import { CARD_TEMPLATE_META, toMinor, type BirthdayMessageDto, type CardTemplateDto, type DigitalGiftDto, type PaymentDto, type PaymentProvider } from '@bday/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { PaymentMethodPicker, PaymentStatusBanner, usePaymentStatus } from '../../src/components/Payment';
 import { VoiceRecorder } from '../../src/components/VoiceRecorder';
 import { WishVideo } from '../../src/components/WishVideo';
 import { Avatar, Button, Card, Chip, EmptyState, Field, InlineError, Loading, Row, Screen, Section, T, Toggle } from '../../src/components/ui';
-import { api, fieldError } from '../../src/lib/api';
+import { api, fieldError, idempotencyKey } from '../../src/lib/api';
 import { pickAndUploadImage, pickAndUploadWishMedia, type PickedMedia } from '../../src/lib/media';
 import { useRecipient } from '../../src/lib/recipient';
 import { colors, radius, spacing } from '../../src/theme';
@@ -29,14 +30,26 @@ export default function SendWish() {
   const [media, setMedia] = useState<PickedMedia | null>(null);
   const [voice, setVoice] = useState<{ url: string; durationSeconds: number } | null>(null);
   const [anonymous, setAnonymous] = useState(false);
+  const [amount, setAmount] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [provider, setProvider] = useState<PaymentProvider | null>(null);
+  const [payerPhone, setPayerPhone] = useState('+254');
+  const [key] = useState(idempotencyKey);
+  const [sent, setSent] = useState<{ message: BirthdayMessageDto; gift: DigitalGiftDto | null; payment: PaymentDto | null } | null>(null);
+  const status = usePaymentStatus(sent?.payment ?? null);
+  const moneyMinor = amount || (customAmount ? toMinor(Number(customAmount), 'KES') : 0);
 
   const template = templates.data?.find((item) => item.id === templateId) ?? null;
 
   const send = useMutation({
     mutationFn: () => {
       const target = recipient?.birthdayId ? { trackedBirthdayId: recipient.birthdayId } : { recipientUserId: recipient?.userId };
-      return api.post('/birthday-messages', {
+      return api.post<{ message: BirthdayMessageDto; gift: DigitalGiftDto | null; payment: PaymentDto | null }>('/birthday-messages', {
         ...target,
+        money:
+          moneyMinor > 0 && recipient?.userId
+            ? { amountMinor: moneyMinor, currency: 'KES', provider: provider ?? 'MPESA', payerPhone: provider === 'MPESA' ? payerPhone.replace(/\s/g, '') : undefined, idempotencyKey: key }
+            : undefined,
         kind,
         body: body.trim() || null,
         mediaUrl: kind === 'IMAGE' ? mediaUrl : kind === 'GIF' || kind === 'VIDEO' ? media?.url : kind === 'VOICE' ? voice?.url : null,
@@ -56,9 +69,14 @@ export default function SendWish() {
             : undefined,
       });
     },
-    onSuccess: () => {
-      Alert.alert('Sent!', `${recipient?.name.split(' ')[0]} will love it.`);
-      router.back();
+    onSuccess: (result) => {
+      setSent(result);
+      // A wish with no money is done the moment it is sent; money waits for the
+      // provider to confirm, so the screen stays open to show that.
+      if (!result.payment) {
+        Alert.alert('Sent!', `${recipient?.name.split(' ')[0]} will love it.`);
+        router.back();
+      }
     },
   });
 
@@ -187,10 +205,55 @@ export default function SendWish() {
         </View>
       ) : null}
 
+      {recipient?.userId ? (
+        <Section title="Add money to your wish" icon="cash">
+          <Card>
+            <T color={colors.textMuted} style={{ marginBottom: spacing.md }}>
+              Optional. It lands in {recipient.name.split(' ')[0]}’s wallet, and they can spend or withdraw it. Sending nothing is fine — the wish is the point.
+            </T>
+            <Row wrap>
+              {[0, 20_000, 50_000, 100_000, 200_000].map((value) => (
+                <Chip
+                  key={value}
+                  label={value === 0 ? 'No money' : `KES ${(value / 100).toLocaleString()}`}
+                  selected={amount === value && !customAmount}
+                  onPress={() => {
+                    setAmount(value);
+                    setCustomAmount('');
+                  }}
+                />
+              ))}
+            </Row>
+            <Field
+              label="Or another amount (KES)"
+              keyboardType="number-pad"
+              value={customAmount}
+              onChangeText={(value) => {
+                setCustomAmount(value);
+                setAmount(0);
+              }}
+              style={{ marginTop: spacing.md }}
+            />
+            {moneyMinor > 0 ? (
+              <PaymentMethodPicker value={provider} onChange={setProvider} phone={payerPhone} onPhoneChange={setPayerPhone} />
+            ) : null}
+          </Card>
+        </Section>
+      ) : null}
+
+      {sent?.payment && status.payment ? (
+        <PaymentStatusBanner
+          payment={status.payment}
+          timedOut={status.timedOut}
+          onRetryCheck={() => void status.check()}
+          successText={`Sent! ${recipient?.name.split(' ')[0]} has your wish and the money.`}
+        />
+      ) : null}
+
       <View style={{ marginTop: spacing.lg }}>
         <Toggle label="Send anonymously" value={anonymous} onChange={setAnonymous} />
       </View>
-      <Button title="Send wish" icon="mail" loading={send.isPending} disabled={!ready} onPress={() => send.mutate()} style={{ marginTop: spacing.md }} />
+      <Button title={moneyMinor > 0 ? `Send wish with KES ${(moneyMinor / 100).toLocaleString()}` : "Send wish"} icon={moneyMinor > 0 ? "cash" : "mail"} loading={send.isPending} disabled={!ready} onPress={() => send.mutate()} style={{ marginTop: spacing.md }} />
     </Screen>
   );
 }

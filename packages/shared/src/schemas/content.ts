@@ -3,6 +3,7 @@ import { LIMITS } from '../constants';
 import {
   BirthdayMessageKind,
   CardTemplateStyle,
+  PaymentProvider,
   MessageKind,
   ReportReason,
   RsvpStatus,
@@ -17,6 +18,9 @@ import {
   isoDateTimeSchema,
   noteSchema,
   paginationSchema,
+  phoneSchema,
+  positiveAmountMinorSchema,
+  currencySchema,
   urlSchema,
 } from './common';
 
@@ -62,6 +66,19 @@ export const sendBirthdayMessageSchema = z
     /** Queue the wish to arrive on the morning of their birthday. */
     deliverAt: isoDateTimeSchema.optional(),
     isAnonymous: z.boolean().default(false),
+    /**
+     * Money with the wish — the heart of the product: wishing is free, and
+     * anyone who wants to can add cash, which lands in the recipient's wallet.
+     */
+    money: z
+      .object({
+        amountMinor: positiveAmountMinorSchema,
+        currency: currencySchema,
+        provider: z.nativeEnum(PaymentProvider),
+        payerPhone: phoneSchema.optional(),
+        idempotencyKey: z.string().trim().min(8).max(64),
+      })
+      .optional(),
   })
   .refine((value) => value.recipientUserId != null || value.trackedBirthdayId != null, {
     message: 'Choose who to wish',

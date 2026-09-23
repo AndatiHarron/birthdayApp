@@ -86,6 +86,9 @@ components:
             - PAYMENT_PROVIDER_UNAVAILABLE
             - PAYMENT_ALREADY_SETTLED
             - INSUFFICIENT_WALLET_BALANCE
+            - PAYOUT_TOO_SMALL
+            - PAYOUT_NOT_PENDING
+            - PAYOUT_DESTINATION_UNVERIFIED
             - CURRENCY_MISMATCH
             - WEBHOOK_SIGNATURE_INVALID
             - DUPLICATE_REQUEST
@@ -218,6 +221,12 @@ components:
           const: 409
         INSUFFICIENT_WALLET_BALANCE:
           const: 402
+        PAYOUT_TOO_SMALL:
+          const: 422
+        PAYOUT_NOT_PENDING:
+          const: 409
+        PAYOUT_DESTINATION_UNVERIFIED:
+          const: 403
         CURRENCY_MISMATCH:
           const: 400
         WEBHOOK_SIGNATURE_INVALID:
@@ -1149,6 +1158,124 @@ paths:
                   nullable: true
               required:
                 - providerRef
+              additionalProperties: false
+  /api/v1/admin/payouts:
+    get:
+      tags:
+        - Admin
+      summary: Withdrawal queue
+      operationId: getAdminPayouts
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - REQUESTED
+              - PROCESSING
+              - PAID
+              - FAILED
+              - CANCELLED
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/admin/payouts/{id}/complete:
+    post:
+      tags:
+        - Admin
+      summary: Mark a withdrawal as sent
+      operationId: postAdminPayoutsIdComplete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 64
+            pattern: ^[A-Za-z0-9_-]+$
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerRef:
+                  type: string
+                  maxLength: 64
+              additionalProperties: false
+  /api/v1/admin/payouts/{id}/fail:
+    post:
+      tags:
+        - Admin
+      summary: Return a withdrawal to the wallet
+      operationId: postAdminPayoutsIdFail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 64
+            pattern: ^[A-Za-z0-9_-]+$
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 240
+              required:
+                - reason
               additionalProperties: false
   /api/v1/admin/categories:
     get:
@@ -6800,6 +6927,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /api/v1/wallet/withdraw:
+    post:
+      tags:
+        - Payments
+      summary: Withdraw wallet money to your verified M-Pesa number
+      operationId: postWalletWithdraw
+      parameters: []
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amountMinor:
+                  type: integer
+                  minimum: 0
+                  maximum: 1000000000000
+                destination:
+                  allOf:
+                    - type: string
+                    - type: string
+                      pattern: ^\+[1-9]\d{7,14}$
+                idempotencyKey:
+                  type: string
+                  minLength: 8
+                  maxLength: 64
+              required:
+                - amountMinor
+                - destination
+                - idempotencyKey
+              additionalProperties: false
+  /api/v1/wallet/withdrawals:
+    get:
+      tags:
+        - Payments
+      summary: Your withdrawals
+      operationId: getWalletWithdrawals
+      parameters: []
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEnvelope"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /api/v1/birthday-messages:
     post:
       tags:
@@ -6992,6 +7188,48 @@ paths:
                 isAnonymous:
                   type: boolean
                   default: false
+                money:
+                  type: object
+                  properties:
+                    amountMinor:
+                      type: integer
+                      minimum: 0
+                      maximum: 1000000000000
+                    currency:
+                      type: string
+                      enum:
+                        - KES
+                        - USD
+                        - EUR
+                        - GBP
+                        - UGX
+                        - TZS
+                        - NGN
+                        - ZAR
+                    provider:
+                      type: string
+                      enum:
+                        - MPESA
+                        - CARD
+                        - STRIPE
+                        - PAYPAL
+                        - WALLET
+                        - MANUAL
+                    payerPhone:
+                      allOf:
+                        - type: string
+                        - type: string
+                          pattern: ^\+[1-9]\d{7,14}$
+                    idempotencyKey:
+                      type: string
+                      minLength: 8
+                      maxLength: 64
+                  required:
+                    - amountMinor
+                    - currency
+                    - provider
+                    - idempotencyKey
+                  additionalProperties: false
               additionalProperties: false
   /api/v1/birthday-messages/received:
     get:

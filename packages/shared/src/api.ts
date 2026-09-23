@@ -13,6 +13,7 @@ import type {
   OrderStatus,
   PaymentProvider,
   PaymentStatus,
+  PayoutStatus,
   ProductStatus,
   RelationshipType,
   ReservationStatus,
@@ -133,6 +134,19 @@ export interface CountdownInfo {
   isToday: boolean;
   label: string;
   turningAge: number | null;
+}
+
+/** A withdrawal of wallet money to mobile money (spec §33). */
+export interface PayoutDto {
+  id: string;
+  amountMinor: number;
+  currency: string;
+  /** Masked: only the last digits of the destination number. */
+  destination: string;
+  status: PayoutStatus;
+  failureReason: string | null;
+  requestedAt: string;
+  completedAt: string | null;
 }
 
 export interface PrivacySettings {

@@ -1,4 +1,6 @@
 import {
+  completePayoutSchema,
+  failPayoutSchema,
   PaymentProvider,
   PaymentStatus,
   ProductStatus,
@@ -23,6 +25,7 @@ import { z } from 'zod';
 import { idParams } from '../http/params';
 import { createModule } from '../http/route';
 import * as adminService from '../services/admin.service';
+import * as payoutService from '../services/payout.service';
 import { auditContext, listAuditLogs } from '../services/audit.service';
 import { getOrder, updateDeliveryStatus } from '../services/order.service';
 
@@ -129,6 +132,25 @@ admin.post(
   '/refunds/:id/complete',
   { summary: 'Mark a manual refund as completed', auth: 'admin', params: idParams, body: z.object({ providerRef: z.string().trim().max(120).nullable() }) },
   async ({ req, params, body }) => adminService.completeManualRefund(auditContext(req), params.id, body.providerRef),
+);
+
+/* withdrawals */
+admin.get(
+  '/payouts',
+  { summary: 'Withdrawal queue', auth: 'admin', query: z.object({ status: z.enum(['REQUESTED', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED']).optional() }) },
+  async ({ query }) => payoutService.listPayouts(query.status),
+);
+
+admin.post(
+  '/payouts/:id/complete',
+  { summary: 'Mark a withdrawal as sent', auth: 'admin', params: idParams, body: completePayoutSchema },
+  async ({ req, params, body }) => payoutService.completePayout(params.id, req.auth!.userId, body.providerRef),
+);
+
+admin.post(
+  '/payouts/:id/fail',
+  { summary: 'Return a withdrawal to the wallet', auth: 'admin', params: idParams, body: failPayoutSchema },
+  async ({ req, params, body }) => payoutService.failPayout(params.id, body.reason, req.auth!.userId),
 );
 
 /* categories */

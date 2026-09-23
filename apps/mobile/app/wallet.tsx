@@ -1,11 +1,12 @@
-import { toMinor, type PaymentDto, type PaymentProvider, type WalletDto } from '@bday/shared';
+import { LIMITS, toMinor, type PaymentDto, type PaymentProvider, type PayoutDto, type WalletDto } from '@bday/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { PaymentMethodPicker, PaymentStatusBanner, usePaymentStatus } from '../src/components/Payment';
 import { money } from '../src/components/gifting';
-import { Button, Card, Chip, Field, InlineError, Loading, Row, Screen, Section, T } from '../src/components/ui';
+import { Alert, View } from 'react-native';
+import { Badge, Button, Card, Chip, Field, InfoRow, InlineError, Loading, Row, Screen, Section, T } from '../src/components/ui';
 import { api, idempotencyKey } from '../src/lib/api';
 import { useAuth } from '../src/lib/auth';
 import { colors, gradients, radius, spacing } from '../src/theme';
@@ -22,6 +23,28 @@ export default function Wallet() {
   const [phone, setPhone] = useState(user?.phone ?? '+254');
   const [pending, setPending] = useState<PaymentDto | null>(null);
   const status = usePaymentStatus(pending);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const withdrawals = useQuery({ queryKey: ['withdrawals'], queryFn: () => api.get<PayoutDto[]>('/wallet/withdrawals') });
+
+  const withdraw = useMutation({
+    mutationFn: () =>
+      api.post<PayoutDto>('/wallet/withdraw', {
+        amountMinor: toMinor(Number(withdrawAmount), 'KES'),
+        destination: (user?.phone ?? '').replace(/\s/g, ''),
+        idempotencyKey: idempotencyKey(),
+      }),
+    onSuccess: (payout) => {
+      setWithdrawAmount('');
+      void queryClient.invalidateQueries({ queryKey: ['withdrawals'] });
+      refresh();
+      Alert.alert(
+        payout.status === 'PAID' ? 'Sent' : 'On its way',
+        payout.status === 'PAID'
+          ? 'The money is on its way to your phone.'
+          : 'We are sending it to your M-Pesa number. You will get a notification when it arrives.',
+      );
+    },
+  });
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['wallet'] });
@@ -73,6 +96,61 @@ export default function Wallet() {
           <Button title={`Upgrade · ${money(premium.data.amountMinor, premium.data.currency)} / ${premium.data.periodDays} days`} loading={upgrade.isPending} disabled={!provider} onPress={() => upgrade.mutate()} />
         </Card>
       ) : null}
+
+      <Section title="Withdraw to M-Pesa" icon="cash">
+        <Card>
+          {user?.phoneVerified && user.phone ? (
+            <>
+              <T color={colors.textMuted}>
+                Money people sent you goes to your own M-Pesa number, {user.phone}. The smallest withdrawal is {money(LIMITS.minPayoutMinor, wallet.data?.currency ?? 'KES')}.
+              </T>
+              <Row wrap style={{ marginTop: spacing.md }}>
+                {[100, 500, 1000, 2500].map((value) => (
+                  <Chip key={value} label={`KES ${value.toLocaleString()}`} selected={withdrawAmount === String(value)} onPress={() => setWithdrawAmount(String(value))} />
+                ))}
+                {(wallet.data?.balanceMinor ?? 0) >= LIMITS.minPayoutMinor ? (
+                  <Chip label="Everything" selected={false} onPress={() => setWithdrawAmount(String((wallet.data!.balanceMinor / 100).toFixed(0)))} />
+                ) : null}
+              </Row>
+              <Field label="Amount (KES)" keyboardType="number-pad" value={withdrawAmount} onChangeText={setWithdrawAmount} style={{ marginTop: spacing.md }} />
+              <InlineError error={withdraw.error} />
+              <Button
+                icon="cash"
+                title={withdrawAmount ? `Withdraw KES ${Number(withdrawAmount).toLocaleString()}` : 'Withdraw'}
+                loading={withdraw.isPending}
+                disabled={!Number(withdrawAmount) || toMinor(Number(withdrawAmount), 'KES') > (wallet.data?.balanceMinor ?? 0)}
+                onPress={() => withdraw.mutate()}
+              />
+            </>
+          ) : (
+            <InfoRow icon="alert">Verify your phone number in Settings → Account first. Money only ever leaves to a number you have proved is yours.</InfoRow>
+          )}
+        </Card>
+
+        {withdrawals.data?.length ? (
+          <View style={{ marginTop: spacing.md }}>
+            {withdrawals.data.slice(0, 5).map((payout) => (
+              <Row key={payout.id} style={{ justifyContent: 'space-between', paddingVertical: spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <T variant="label">{money(payout.amountMinor, payout.currency)}</T>
+                  <T variant="caption" color={colors.textMuted}>
+                    To {payout.destination} · {new Date(payout.requestedAt).toLocaleDateString()}
+                  </T>
+                  {payout.failureReason ? (
+                    <T variant="caption" color={colors.danger}>
+                      {payout.failureReason}
+                    </T>
+                  ) : null}
+                </View>
+                <Badge
+                  tone={payout.status === 'PAID' ? 'success' : payout.status === 'FAILED' ? 'danger' : 'muted'}
+                  label={payout.status === 'PAID' ? 'Sent' : payout.status === 'FAILED' ? 'Returned' : 'In progress'}
+                />
+              </Row>
+            ))}
+          </View>
+        ) : null}
+      </Section>
 
       <Section title="Wallet activity">
         {wallet.data?.transactions.length === 0 ? <T color={colors.textMuted}>No transactions yet.</T> : null}

@@ -1,4 +1,4 @@
-import { api, authHeader, describeDb, makeFriends, registerUser } from '../setup/helpers';
+import { api, authHeader, describeDb, idempotencyKey, makeFriends, registerUser } from '../setup/helpers';
 
 /**
  * Wishes carrying media: the wish wall plays photos, GIFs, video and voice one
@@ -42,18 +42,18 @@ describeDb('wishes with media', () => {
       .set(authHeader(sender))
       .send({ recipientUserId: birthdayPerson.id, kind: 'VIDEO', mediaUrl: uploaded.body.data.url, durationSeconds: 12, body: 'Happy birthday!' })
       .expect(201);
-    expect(sent.body.data.kind).toBe('VIDEO');
+    expect(sent.body.data.message.kind).toBe('VIDEO');
 
     const received = await api().get('/api/v1/birthday-messages/received').set(authHeader(birthdayPerson)).expect(200);
-    const wish = received.body.data.items.find((item: { id: string }) => item.id === sent.body.data.id);
+    const wish = received.body.data.items.find((item: { id: string }) => item.id === sent.body.data.message.id);
     expect(wish).toMatchObject({ kind: 'VIDEO', mediaUrl: uploaded.body.data.url, fromStranger: false });
     expect(wish.sender.displayName).toBe('Mary');
     expect(wish.readAt).toBeNull();
 
     // The wall marks each wish read as the recipient reaches it.
-    await api().post('/api/v1/birthday-messages/read').set(authHeader(birthdayPerson)).send({ ids: [sent.body.data.id] }).expect(200);
+    await api().post('/api/v1/birthday-messages/read').set(authHeader(birthdayPerson)).send({ ids: [sent.body.data.message.id] }).expect(200);
     const reread = await api().get('/api/v1/birthday-messages/received').set(authHeader(birthdayPerson)).expect(200);
-    expect(reread.body.data.items.find((item: { id: string }) => item.id === sent.body.data.id).readAt).not.toBeNull();
+    expect(reread.body.data.items.find((item: { id: string }) => item.id === sent.body.data.message.id).readAt).not.toBeNull();
   });
 
   it('reacts to a wish and takes the reaction back', async () => {
@@ -66,12 +66,67 @@ describeDb('wishes with media', () => {
       .send({ recipientUserId: birthdayPerson.id, kind: 'TEXT', body: 'Have a great one!' })
       .expect(201);
 
-    await api().post(`/api/v1/birthday-messages/${sent.body.data.id}/reactions`).set(authHeader(birthdayPerson)).send({ emoji: '❤️' }).expect(204);
+    await api().post(`/api/v1/birthday-messages/${sent.body.data.message.id}/reactions`).set(authHeader(birthdayPerson)).send({ emoji: '❤️' }).expect(204);
     const withReaction = await api().get('/api/v1/birthday-messages/received').set(authHeader(birthdayPerson)).expect(200);
     expect(withReaction.body.data.items[0].reactions).toEqual([{ emoji: '❤️', count: 1, mine: true }]);
 
-    await api().delete(`/api/v1/birthday-messages/${sent.body.data.id}/reactions/${encodeURIComponent('❤️')}`).set(authHeader(birthdayPerson)).expect(204);
+    await api().delete(`/api/v1/birthday-messages/${sent.body.data.message.id}/reactions/${encodeURIComponent('❤️')}`).set(authHeader(birthdayPerson)).expect(204);
     const cleared = await api().get('/api/v1/birthday-messages/received').set(authHeader(birthdayPerson)).expect(200);
     expect(cleared.body.data.items[0].reactions).toEqual([]);
+  });
+});
+
+/**
+ * The heart of the product: a wish is free, and anyone can add money to it.
+ * One request sends both, and the money lands in the recipient's wallet.
+ */
+describeDb('a wish with money', () => {
+  it('sends the wish and the money together, and credits the wallet', async () => {
+    const sender = await registerUser({ displayName: 'Uncle Ken' });
+    const birthdayPerson = await registerUser();
+    await makeFriends(sender, birthdayPerson);
+
+    const sent = await api()
+      .post('/api/v1/birthday-messages')
+      .set(authHeader(sender))
+      .send({
+        recipientUserId: birthdayPerson.id,
+        kind: 'TEXT',
+        body: 'Happy birthday! Buy yourself something.',
+        money: { amountMinor: 50_000, currency: 'KES', provider: 'MPESA', payerPhone: '+254712345678', idempotencyKey: idempotencyKey() },
+      })
+      .expect(201);
+
+    expect(sent.body.data.message.body).toMatch(/Happy birthday/);
+    expect(sent.body.data.gift).toMatchObject({ type: 'WALLET_CREDIT', valueMinor: 50_000 });
+    // Nothing is paid until the provider says so (spec §58 rule 5).
+    expect(sent.body.data.payment.status).toBe('PENDING');
+
+    await api().post(`/api/v1/payments/${sent.body.data.payment.id}/verify`).set(authHeader(sender)).expect(200);
+
+    const received = await api().get('/api/v1/digital-gifts/received').set(authHeader(birthdayPerson)).expect(200);
+    const gift = received.body.data.find((entry: { id: string }) => entry.id === sent.body.data.gift.id);
+    expect(gift).toBeTruthy();
+
+    // The money reaches the wallet when they open the gift.
+    const before = await api().get('/api/v1/wallet').set(authHeader(birthdayPerson)).expect(200);
+    expect(before.body.data.balanceMinor).toBe(0);
+    await api().post(`/api/v1/digital-gifts/${gift.id}/open`).set(authHeader(birthdayPerson)).expect(200);
+    const after = await api().get('/api/v1/wallet').set(authHeader(birthdayPerson)).expect(200);
+    expect(after.body.data.balanceMinor).toBe(50_000);
+    expect(after.body.data.transactions[0]).toMatchObject({ type: 'CREDIT', reason: 'GIFT_RECEIVED', amountMinor: 50_000 });
+  });
+
+  it('still sends a wish with no money at all', async () => {
+    const sender = await registerUser();
+    const birthdayPerson = await registerUser();
+    await makeFriends(sender, birthdayPerson);
+    const sent = await api()
+      .post('/api/v1/birthday-messages')
+      .set(authHeader(sender))
+      .send({ recipientUserId: birthdayPerson.id, kind: 'TEXT', body: 'Have a lovely day!' })
+      .expect(201);
+    expect(sent.body.data.gift).toBeNull();
+    expect(sent.body.data.payment).toBeNull();
   });
 });

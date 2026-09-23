@@ -85,6 +85,20 @@ export type VendorApplicationInput = z.infer<typeof vendorApplicationSchema>;
 
 /* ------------------------------ addresses ------------------------------ */
 
+export const requestPayoutSchema = z.object({
+  amountMinor: positiveAmountMinorSchema,
+  /** The phone this account has verified; money never leaves to an unproven number. */
+  destination: phoneSchema,
+  idempotencyKey: z.string().trim().min(8).max(64),
+});
+export type RequestPayoutInput = z.infer<typeof requestPayoutSchema>;
+
+export const completePayoutSchema = z.object({ providerRef: z.string().trim().max(64).optional() });
+export type CompletePayoutInput = z.infer<typeof completePayoutSchema>;
+
+export const failPayoutSchema = z.object({ reason: z.string().trim().min(3).max(240) });
+export type FailPayoutInput = z.infer<typeof failPayoutSchema>;
+
 export const deliveryAddressSchema = z.object({
   label: z.string().trim().min(1).max(40).default('Home'),
   recipientName: displayNameSchema,

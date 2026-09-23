@@ -8,6 +8,7 @@ import {
   idSchema,
   inviteToGroupGiftSchema,
   markNotificationsReadSchema,
+  requestPayoutSchema,
   reactToMessageSchema,
   revealGroupGiftSchema,
   sendBirthdayMessageSchema,
@@ -23,6 +24,7 @@ import { paymentLimiter } from '../middleware/rateLimit';
 import * as digitalGiftService from '../services/digitalGift.service';
 import * as groupGiftService from '../services/groupGift.service';
 import * as memoryService from '../services/memory.service';
+import * as payoutService from '../services/payout.service';
 import * as surpriseService from '../services/surprise.service';
 import * as wishService from '../services/wish.service';
 
@@ -191,6 +193,20 @@ digitalGifts.post(
 
 export const wallet = createModule('/wallet', 'Payments');
 wallet.get('/', { summary: 'Wallet balance and ledger', auth: 'user' }, async ({ userId }) => digitalGiftService.getWallet(userId));
+
+wallet.post(
+  '/withdraw',
+  {
+    summary: 'Withdraw wallet money to your verified M-Pesa number',
+    auth: 'user',
+    body: requestPayoutSchema,
+    status: 201,
+    middleware: [paymentLimiter],
+  },
+  async ({ userId, body }) => payoutService.requestPayout(userId, body),
+);
+
+wallet.get('/withdrawals', { summary: 'Your withdrawals', auth: 'user' }, async ({ userId }) => payoutService.listMyPayouts(userId));
 
 /* ---------------------------- birthday wishes ---------------------------- */
 

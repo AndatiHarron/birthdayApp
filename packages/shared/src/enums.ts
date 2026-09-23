@@ -283,8 +283,18 @@ export const WalletTransactionType = {
 } as const;
 export type WalletTransactionType = (typeof WalletTransactionType)[keyof typeof WalletTransactionType];
 
+export const PayoutStatus = {
+  REQUESTED: 'REQUESTED',
+  PROCESSING: 'PROCESSING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type PayoutStatus = (typeof PayoutStatus)[keyof typeof PayoutStatus];
+
 export const WalletTransactionReason = {
   TOPUP: 'TOPUP',
+  WITHDRAWAL: 'WITHDRAWAL',
   GIFT_RECEIVED: 'GIFT_RECEIVED',
   GIFT_SENT: 'GIFT_SENT',
   CONTRIBUTION: 'CONTRIBUTION',

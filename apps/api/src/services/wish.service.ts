@@ -6,6 +6,8 @@ import {
   type BirthdayMessageDto,
   type CardTemplateDto,
   type Paginated,
+  type PaymentDto,
+  type DigitalGiftDto,
   type ReactToMessageInput,
   type SendBirthdayMessageInput,
   type SendThankYouInput,
@@ -17,6 +19,7 @@ import { prisma, type Tx } from '../lib/prisma';
 import { decodeCursor, encodeCursor } from '../lib/response';
 import { RealtimeEvent, emitToUser } from '../realtime/emitter';
 import { isBlockedEitherWay } from './access.service';
+import { sendDigitalGift, type SendDigitalGiftResult } from './digitalGift.service';
 import { assertCanReach } from './global.service';
 import { notify } from './notification.service';
 
@@ -206,11 +209,18 @@ async function resolveCelebrationYear(recipientUserId: string, now = new Date())
   return Number(countdown.nextDate.slice(0, 4));
 }
 
+export interface SendWishResult {
+  message: BirthdayMessageDto;
+  /** The money sent with the wish, when there was any. */
+  gift: DigitalGiftDto | null;
+  payment: PaymentDto | null;
+}
+
 export async function sendBirthdayMessage(
   senderId: string,
   input: SendBirthdayMessageInput,
   isPremium: boolean,
-): Promise<BirthdayMessageDto> {
+): Promise<SendWishResult> {
   let recipientUserId = input.recipientUserId ?? null;
   let trackedBirthdayId: string | null = null;
 
@@ -276,11 +286,32 @@ export async function sendBirthdayMessage(
     await deliverWishNotification(messageId).catch(() => undefined);
   }
 
+  // Money rides along with the wish: one action for the sender, one wallet
+  // credit for the recipient once the provider confirms the payment.
+  let money: SendDigitalGiftResult | null = null;
+  if (input.money && recipientUserId) {
+    money = await sendDigitalGift(
+      senderId,
+      {
+        type: 'WALLET_CREDIT',
+        recipientUserId,
+        message: input.body?.trim() || null,
+        valueMinor: input.money.amountMinor,
+        currency: input.money.currency,
+        provider: input.money.provider,
+        payerPhone: input.money.payerPhone,
+        isAnonymous: input.isAnonymous,
+        idempotencyKey: input.money.idempotencyKey,
+      } as never,
+      isPremium,
+    );
+  }
+
   const row = (await prisma.birthdayMessage.findUniqueOrThrow({
     where: { id: messageId },
     include: MESSAGE_INCLUDE,
   })) as MessageRow;
-  return toMessageDto(row, senderId);
+  return { message: toMessageDto(row, senderId), gift: money?.gift ?? null, payment: money?.payment ?? null };
 }
 
 /** Notifies the recipient. Shared with the scheduled-delivery worker. */

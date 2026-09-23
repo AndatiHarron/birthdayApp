@@ -287,8 +287,17 @@ enum WalletTransactionType {
   DEBIT
 }
 
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
 enum WalletTransactionReason {
   TOPUP
+  WITHDRAWAL
   GIFT_RECEIVED
   GIFT_SENT
   CONTRIBUTION
@@ -448,6 +457,8 @@ model User {
   aiUsage                 AiUsageDaily[]
   deliveryEvents          DeliveryEvent[]
   refundsIssued           Refund[]
+  payouts                 Payout[]                  @relation("PayoutUser")
+  payoutsProcessed        Payout[]                  @relation("PayoutProcessor")
 
   @@index([status])
   @@index([createdAt])
@@ -2169,6 +2180,37 @@ model BirthdayCheer {
   @@index([toUserId, celebrationYear])
   @@index([fromUserId, createdAt])
   @@map("birthday_cheers")
+}
+
+/// Cashing out wallet money to mobile money (spec §33). The wallet is debited
+/// when the payout is requested, and refunded if it later fails.
+model Payout {
+  id     String @id @default(cuid())
+  userId String
+
+  amountMinor Int
+  currency    String
+  provider    PaymentProvider @default(MPESA)
+  /// Where the money goes: an E.164 phone number for mobile money.
+  destination String
+
+  status              PayoutStatus @default(REQUESTED)
+  providerRef         String?
+  failureReason       String?
+  /// The wallet debit that funded this payout, so a failure can be reversed once.
+  walletTransactionId String?      @unique
+
+  processedById String?
+  requestedAt   DateTime  @default(now())
+  completedAt   DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  user        User  @relation("PayoutUser", fields: [userId], references: [id], onDelete: Cascade)
+  processedBy User? @relation("PayoutProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, requestedAt])
+  @@index([status])
+  @@map("payouts")
 }
 
 model AuditLog {

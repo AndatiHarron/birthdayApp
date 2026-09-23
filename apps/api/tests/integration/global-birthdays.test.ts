@@ -50,13 +50,13 @@ describeDb('global birthdays', () => {
 
     await optIn(sarah);
     const sent = await api().post('/api/v1/birthday-messages').set(authHeader(stranger)).send(wish).expect(201);
-    expect(sent.body.data.fromStranger).toBe(true);
+    expect(sent.body.data.message.fromStranger).toBe(true);
 
     // Friends are never "strangers", opted in or not.
     const friend = await registerUser();
     await makeFriends(friend, sarah);
     const fromFriend = await api().post('/api/v1/birthday-messages').set(authHeader(friend)).send(wish).expect(201);
-    expect(fromFriend.body.data.fromStranger).toBe(false);
+    expect(fromFriend.body.data.message.fromStranger).toBe(false);
   });
 
   it('lets strangers send money, within a cap, but never physical gifts', async () => {

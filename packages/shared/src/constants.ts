@@ -153,6 +153,9 @@ export const LIMITS = {
   maxPageSize: 100,
   /** Money */
   minContributionMinor: 5000, // e.g. KES 50.00
+  /** Smallest withdrawal, and the most that can leave one wallet in a day. */
+  minPayoutMinor: 10_000,
+  maxPayoutPerDayMinor: 5_000_000,
   /** Text */
   maxBioLength: 280,
   maxMessageLength: 2000,
